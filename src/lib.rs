@@ -1,4 +1,4 @@
-// Copyright 2024 Taiizor
+// Copyright 2025 Taiizor
 // All Rights Reserved
 use tauri::{
   plugin::{Builder, TauriPlugin},
