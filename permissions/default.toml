@@ -1,3 +1,3 @@
 [default]
-description = "Default permissions for the plugin"
-permissions = ["allow-ping"]
+description = "Default permissions for the cache plugin"
+permissions = ["allow-get", "allow-set", "allow-has_key", "allow-remove", "allow-clear", "allow-keys"]

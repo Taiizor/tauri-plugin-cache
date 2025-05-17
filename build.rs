@@ -1,4 +1,4 @@
-const COMMANDS: &[&str] = &["ping"];
+const COMMANDS: &[&str] = &["set", "get", "has_key", "remove", "clear", "keys"];
 
 fn main() {
   tauri_plugin::Builder::new(COMMANDS)

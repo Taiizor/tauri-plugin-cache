@@ -1,3 +1,5 @@
+// Copyright 2024 Taiizor
+// All Rights Reserved
 use tauri::{
   plugin::{Builder, TauriPlugin},
   Manager, Runtime,
@@ -23,10 +25,11 @@ use mobile::Cache;
 
 /// Extensions to [`tauri::App`], [`tauri::AppHandle`] and [`tauri::Window`] to access the cache APIs.
 pub trait CacheExt<R: Runtime> {
+  /// Access the cache APIs.
   fn cache(&self) -> &Cache<R>;
 }
 
-impl<R: Runtime, T: Manager<R>> crate::CacheExt<R> for T {
+impl<R: Runtime, T: Manager<R>> CacheExt<R> for T {
   fn cache(&self) -> &Cache<R> {
     self.state::<Cache<R>>().inner()
   }
@@ -35,12 +38,20 @@ impl<R: Runtime, T: Manager<R>> crate::CacheExt<R> for T {
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
   Builder::new("cache")
-    .invoke_handler(tauri::generate_handler![commands::ping])
+    .invoke_handler(tauri::generate_handler![
+      commands::set,
+      commands::get,
+      commands::has_key,
+      commands::remove,
+      commands::clear,
+      commands::keys,
+    ])
     .setup(|app, api| {
       #[cfg(mobile)]
       let cache = mobile::init(app, api)?;
       #[cfg(desktop)]
       let cache = desktop::init(app, api)?;
+      
       app.manage(cache);
       Ok(())
     })
