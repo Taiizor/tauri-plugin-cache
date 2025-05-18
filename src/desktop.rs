@@ -5,7 +5,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use tauri::{AppHandle, Manager, Runtime, State};
+use serde::de::DeserializeOwned;
+use tauri::{AppHandle, Manager, Runtime, plugin::PluginApi};
 
 use crate::models::CacheEntry;
 use crate::{Error, Result};
@@ -129,32 +130,36 @@ impl<R: Runtime> Cache<R> {
     
     Ok(())
   }
-
-  // Helper method to load the cache from disk
-  fn load_cache() -> Result<HashMap<String, CacheEntry>> {
-    Ok(HashMap::new())
-  }
 }
 
-pub fn init<R: Runtime>(app: &AppHandle<R>, _: State<'_, tauri::plugin::PluginApi<R>>) -> Result<Cache<R>> {
+pub fn init<R: Runtime, C: DeserializeOwned>(app: &AppHandle<R>, api: PluginApi<R, C>) -> Result<Cache<R>> {
   // Get app path
   let app_dir = app.path().app_config_dir()
-    .ok_or(Error::InitError("Failed to get app config directory".to_string()))?;
+    .map_err(|e| Error::InitError(format!("Failed to get app config directory: {}", e)))?;
   
   // Create cache directory
   let cache_dir = app_dir.join("cache");
-  create_dir_all(&cache_dir).map_err(|e| Error::InitError(format!("Failed to create cache directory: {}", e)))?;
+  if let Err(e) = create_dir_all(&cache_dir) {
+    return Err(Error::InitError(format!("Failed to create cache directory: {}", e)));
+  }
   
   // Set cache file path
   let storage_path = cache_dir.join("cache.json");
   
   // Initialize cache data
   let cache = if storage_path.exists() {
-    let mut file = File::open(&storage_path).map_err(Error::from)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).map_err(Error::from)?;
-    
-    serde_json::from_str(&contents).unwrap_or_else(|_| HashMap::new())
+    match File::open(&storage_path) {
+      Ok(mut file) => {
+        let mut contents = String::new();
+        match file.read_to_string(&mut contents) {
+          Ok(_) => {
+            serde_json::from_str(&contents).unwrap_or_else(|_| HashMap::new())
+          },
+          Err(_) => HashMap::new(),
+        }
+      },
+      Err(_) => HashMap::new(),
+    }
   } else {
     HashMap::new()
   };
@@ -166,6 +171,6 @@ pub fn init<R: Runtime>(app: &AppHandle<R>, _: State<'_, tauri::plugin::PluginAp
   })
 }
 
-pub fn inner<R: Runtime>(cache: State<'_, Cache<R>>) -> &Cache<R> {
+pub fn inner<R: Runtime>(cache: tauri::State<'_, Cache<R>>) -> &Cache<R> {
   cache.inner()
-} 
+}

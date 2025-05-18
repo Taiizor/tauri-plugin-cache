@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use serde::de::DeserializeOwned;
 use tauri::{
   plugin::{PluginApi, PluginHandle},
   AppHandle, Runtime,
@@ -20,9 +21,9 @@ pub struct Cache<R: Runtime> {
 }
 
 // initializes the Kotlin or Swift plugin classes
-pub fn init<R: Runtime>(
+pub fn init<R: Runtime, C: DeserializeOwned>(
   _app: &AppHandle<R>,
-  api: PluginApi<R>,
+  api: PluginApi<R, C>,
 ) -> Result<Cache<R>> {
   #[cfg(target_os = "android")]
   let handle = api.register_android_plugin("app.tauri", "cache.CachePlugin")?;
