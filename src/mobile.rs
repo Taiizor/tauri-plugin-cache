@@ -35,7 +35,7 @@ impl<R: Runtime> Cache<R> {
     self
       .0
       .run_mobile_plugin("set", request)
-      .map_err(Into::into)
+      .map_err(|e| crate::Error::PluginInvoke(e))
   }
 
   /// Gets a value from the cache
@@ -46,7 +46,7 @@ impl<R: Runtime> Cache<R> {
     self
       .0
       .run_mobile_plugin::<_, Option<serde_json::Value>>("get", request)
-      .map_err(Into::into)
+      .map_err(|e| crate::Error::PluginInvoke(e))
   }
 
   /// Checks if a key exists in the cache
@@ -57,7 +57,7 @@ impl<R: Runtime> Cache<R> {
     self
       .0
       .run_mobile_plugin("has", request)
-      .map_err(Into::into)
+      .map_err(|e| crate::Error::PluginInvoke(e))
   }
 
   /// Removes a value from the cache
@@ -68,7 +68,7 @@ impl<R: Runtime> Cache<R> {
     self
       .0
       .run_mobile_plugin("remove", request)
-      .map_err(Into::into)
+      .map_err(|e| crate::Error::PluginInvoke(e))
   }
 
   /// Clears all values from the cache
@@ -76,7 +76,7 @@ impl<R: Runtime> Cache<R> {
     self
       .0
       .run_mobile_plugin::<_, EmptyResponse>("clear", ())
-      .map_err(Into::into)
+      .map_err(|e| crate::Error::PluginInvoke(e))
   }
   
   /// Get cache statistics
@@ -84,6 +84,6 @@ impl<R: Runtime> Cache<R> {
     self
       .0
       .run_mobile_plugin::<_, CacheStats>("stats", ())
-      .map_err(Into::into)
+      .map_err(|e| crate::Error::PluginInvoke(e))
   }
 }

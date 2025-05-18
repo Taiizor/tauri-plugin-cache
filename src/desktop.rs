@@ -193,4 +193,3 @@ impl<R: Runtime> Cache<R> {
     self.cleanup_interval = seconds;
   }
 }
-}
