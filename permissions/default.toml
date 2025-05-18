@@ -1,3 +1,33 @@
 [default]
-description = "Default permissions for the plugin"
-permissions = ["allow-ping"]
+description = "Default permissions for the cache plugin"
+permissions = ["allow-set", "allow-get", "allow-has", "allow-remove", "allow-clear", "allow-stats"]
+
+# Permissions for setting cache items
+[allow-set]
+description = "Allows setting data in the cache"
+context = []
+
+# Permissions for getting cache items
+[allow-get]
+description = "Allows retrieving data from the cache"
+context = []
+
+# Permissions for checking if cache items exist
+[allow-has]
+description = "Allows checking if data exists in the cache"
+context = []
+
+# Permissions for removing cache items
+[allow-remove]
+description = "Allows removing data from the cache"
+context = []
+
+# Permissions for clearing all cache items
+[allow-clear]
+description = "Allows clearing all data from the cache"
+context = []
+
+# Permissions for getting cache statistics
+[allow-stats]
+description = "Allows retrieving statistics about the cache"
+context = []

@@ -35,7 +35,14 @@ impl<R: Runtime, T: Manager<R>> crate::CacheExt<R> for T {
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
   Builder::new("cache")
-    .invoke_handler(tauri::generate_handler![commands::ping])
+    .invoke_handler(tauri::generate_handler![
+      commands::set,
+      commands::get,
+      commands::has,
+      commands::remove,
+      commands::clear,
+      commands::stats
+    ])
     .setup(|app, api| {
       #[cfg(mobile)]
       let cache = mobile::init(app, api)?;

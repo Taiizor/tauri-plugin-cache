@@ -1,4 +1,4 @@
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Serialize};
 use tauri::{
   plugin::{PluginApi, PluginHandle},
   AppHandle, Runtime,
@@ -15,7 +15,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
   api: PluginApi<R, C>,
 ) -> crate::Result<Cache<R>> {
   #[cfg(target_os = "android")]
-  let handle = api.register_android_plugin("", "ExamplePlugin")?;
+  let handle = api.register_android_plugin("app.tauri.plugin.cache", "CachePlugin")?;
   #[cfg(target_os = "ios")]
   let handle = api.register_ios_plugin(init_plugin_cache)?;
   Ok(Cache(handle))
@@ -25,10 +25,65 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct Cache<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> Cache<R> {
-  pub fn ping(&self, payload: PingRequest) -> crate::Result<PingResponse> {
+  /// Sets a value in the cache with optional TTL
+  pub fn set<T: Serialize>(&self, key: String, value: T, options: Option<SetItemOptions>) -> crate::Result<EmptyResponse> {
+    let request = SetRequest {
+      key,
+      value,
+      options,
+    };
     self
       .0
-      .run_mobile_plugin("ping", payload)
+      .run_mobile_plugin("set", request)
+      .map_err(Into::into)
+  }
+
+  /// Gets a value from the cache
+  pub fn get(&self, key: &str) -> crate::Result<Option<serde_json::Value>> {
+    let request = GetRequest {
+      key: key.to_string(),
+    };
+    self
+      .0
+      .run_mobile_plugin::<_, Option<serde_json::Value>>("get", request)
+      .map_err(Into::into)
+  }
+
+  /// Checks if a key exists in the cache
+  pub fn has(&self, key: &str) -> crate::Result<BooleanResponse> {
+    let request = HasRequest {
+      key: key.to_string(),
+    };
+    self
+      .0
+      .run_mobile_plugin("has", request)
+      .map_err(Into::into)
+  }
+
+  /// Removes a value from the cache
+  pub fn remove(&self, key: &str) -> crate::Result<EmptyResponse> {
+    let request = RemoveRequest {
+      key: key.to_string(),
+    };
+    self
+      .0
+      .run_mobile_plugin("remove", request)
+      .map_err(Into::into)
+  }
+
+  /// Clears all values from the cache
+  pub fn clear(&self) -> crate::Result<EmptyResponse> {
+    self
+      .0
+      .run_mobile_plugin::<_, EmptyResponse>("clear", ())
+      .map_err(Into::into)
+  }
+  
+  /// Get cache statistics
+  pub fn stats(&self) -> crate::Result<CacheStats> {
+    self
+      .0
+      .run_mobile_plugin::<_, CacheStats>("stats", ())
       .map_err(Into::into)
   }
 }
