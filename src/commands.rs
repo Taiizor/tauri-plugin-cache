@@ -22,8 +22,8 @@ pub(crate) async fn get<R: Runtime>(
   Ok(GetResponse { value, exists })
 }
 
-#[command(name = "has-key")]
-pub(crate) async fn has_key<R: Runtime>(
+#[command]
+pub(crate) async fn haskey<R: Runtime>(
   app: AppHandle<R>,
   request: HasRequest,
 ) -> Result<HasResponse> {

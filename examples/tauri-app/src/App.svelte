@@ -140,7 +140,7 @@
   .cache-container {
     margin-top: 2rem;
     padding: 1rem;
-    border: 1px solid #ddd;
+    border: 1px solid #181616;
     border-radius: 8px;
   }
 
@@ -172,7 +172,7 @@
   .response-container {
     margin-top: 1rem;
     padding: 1rem;
-    background-color: #f5f5f5;
+    background-color: #0f0d0d;
     border-radius: 4px;
     max-height: 300px;
     overflow-y: auto;

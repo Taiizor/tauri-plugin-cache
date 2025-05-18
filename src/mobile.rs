@@ -112,7 +112,7 @@ impl<R: Runtime> Cache<R> {
       let request = HasRequest {
         key: key.to_string(),
       };
-      if let Ok(response) = self.handle.run_mobile_plugin::<_, HasResponse>("has_key", request) {
+      if let Ok(response) = self.handle.run_mobile_plugin::<_, HasResponse>("haskey", request) {
         return Ok(response.exists);
       }
     }

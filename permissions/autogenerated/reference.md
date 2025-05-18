@@ -6,7 +6,7 @@ Default permissions for the cache plugin
 
 - `allow-get`
 - `allow-set`
-- `allow-has-key`
+- `allow-haskey`
 - `allow-remove`
 - `allow-clear`
 - `allow-keys`
@@ -75,12 +75,12 @@ Denies the get command without any pre-configured scope.
 <tr>
 <td>
 
-`cache:allow-has-key`
+`cache:allow-haskey`
 
 </td>
 <td>
 
-Enables the has-key command without any pre-configured scope.
+Enables the haskey command without any pre-configured scope.
 
 </td>
 </tr>
@@ -88,12 +88,12 @@ Enables the has-key command without any pre-configured scope.
 <tr>
 <td>
 
-`cache:deny-has-key`
+`cache:deny-haskey`
 
 </td>
 <td>
 
-Denies the has-key command without any pre-configured scope.
+Denies the haskey command without any pre-configured scope.
 
 </td>
 </tr>

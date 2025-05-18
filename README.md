@@ -121,7 +121,7 @@ For more fine-grained control:
   "permissions": [
     "cache:allow-set",
     "cache:allow-get",
-    "cache:allow-has-key",
+    "cache:allow-haskey",
     "cache:allow-remove",
     "cache:allow-clear",
     "cache:allow-keys"
