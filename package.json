@@ -2,8 +2,7 @@
   "name": "tauri-plugin-cache-api",
   "version": "0.1.0",
   "author": "Taiizor",
-  "description": "Tauri plugin for caching data with TTL support",
-  "license": "MIT OR Apache-2.0",
+  "description": "",
   "type": "module",
   "types": "./dist-js/index.d.ts",
   "main": "./dist-js/index.cjs",
@@ -17,28 +16,18 @@
     "dist-js",
     "README.md"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Taiizor/tauri-plugin-cache"
-  },
-  "keywords": [
-    "tauri",
-    "plugin",
-    "cache",
-    "ttl"
-  ],
   "scripts": {
     "build": "rollup -c",
     "prepublishOnly": "pnpm build",
     "pretest": "pnpm build"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.5.0"
+    "@tauri-apps/api": ">=2.0.0-beta.6"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^11.1.6",
-    "rollup": "^4.40.2",
-    "tslib": "^2.8.1",
-    "typescript": "^5.8.3"
+    "rollup": "^4.9.6",
+    "typescript": "^5.3.3",
+    "tslib": "^2.6.2"
   }
 }

@@ -2,19 +2,15 @@
 name = "tauri-plugin-cache"
 version = "0.1.0"
 authors = [ "Taiizor" ]
-description = "Tauri plugin for caching data with TTL support"
-license = "MIT OR Apache-2.0"
+description = ""
 edition = "2021"
 rust-version = "1.77.2"
 exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
 links = "tauri-plugin-cache"
-repository = "https://github.com/Taiizor/tauri-plugin-cache"
-keywords = ["tauri", "plugin", "cache"]
 
 [dependencies]
-tauri = { version = "2.5.1" }
+tauri = { version = "2.5.0" }
 serde = "1.0"
-serde_json = "1.0"
 thiserror = "2"
 
 [build-dependencies]
