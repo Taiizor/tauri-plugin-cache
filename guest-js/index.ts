@@ -33,7 +33,7 @@ export async function get(key: string): Promise<string | null> {
  * @returns True if the key exists and has not expired, otherwise false
  */
 export async function hasKey(key: string): Promise<boolean> {
-  return await invoke<{ exists: boolean }>('plugin:cache|has_key', {
+  return await invoke<{ exists: boolean }>('plugin:cache|has-key', {
     request: { key }
   }).then((response) => response.exists);
 }

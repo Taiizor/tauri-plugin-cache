@@ -319,16 +319,16 @@
           "markdownDescription": "Denies the get command without any pre-configured scope."
         },
         {
-          "description": "Enables the has_key command without any pre-configured scope.",
+          "description": "Enables the has-key command without any pre-configured scope.",
           "type": "string",
           "const": "allow-has-key",
-          "markdownDescription": "Enables the has_key command without any pre-configured scope."
+          "markdownDescription": "Enables the has-key command without any pre-configured scope."
         },
         {
-          "description": "Denies the has_key command without any pre-configured scope.",
+          "description": "Denies the has-key command without any pre-configured scope.",
           "type": "string",
           "const": "deny-has-key",
-          "markdownDescription": "Denies the has_key command without any pre-configured scope."
+          "markdownDescription": "Denies the has-key command without any pre-configured scope."
         },
         {
           "description": "Enables the keys command without any pre-configured scope.",
@@ -341,18 +341,6 @@
           "type": "string",
           "const": "deny-keys",
           "markdownDescription": "Denies the keys command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the ping command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-ping",
-          "markdownDescription": "Enables the ping command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the ping command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-ping",
-          "markdownDescription": "Denies the ping command without any pre-configured scope."
         },
         {
           "description": "Enables the remove command without any pre-configured scope.",
@@ -379,10 +367,10 @@
           "markdownDescription": "Denies the set command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the cache plugin\n#### This default permission set includes:\n\n- `allow-get`\n- `allow-set`\n- `allow-has_key`\n- `allow-remove`\n- `allow-clear`\n- `allow-keys`",
+          "description": "Default permissions for the cache plugin\n#### This default permission set includes:\n\n- `allow-get`\n- `allow-set`\n- `allow-has-key`\n- `allow-remove`\n- `allow-clear`\n- `allow-keys`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the cache plugin\n#### This default permission set includes:\n\n- `allow-get`\n- `allow-set`\n- `allow-has_key`\n- `allow-remove`\n- `allow-clear`\n- `allow-keys`"
+          "markdownDescription": "Default permissions for the cache plugin\n#### This default permission set includes:\n\n- `allow-get`\n- `allow-set`\n- `allow-has-key`\n- `allow-remove`\n- `allow-clear`\n- `allow-keys`"
         }
       ]
     }

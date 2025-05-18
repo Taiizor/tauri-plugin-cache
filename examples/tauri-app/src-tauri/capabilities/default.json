@@ -7,7 +7,6 @@
   ],
   "permissions": [
     "core:default",
-    "cache:default",
-    "sql:default"
+    "cache:default"
   ]
 }

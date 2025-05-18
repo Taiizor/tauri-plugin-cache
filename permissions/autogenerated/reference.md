@@ -6,7 +6,7 @@ Default permissions for the cache plugin
 
 - `allow-get`
 - `allow-set`
-- `allow-has_key`
+- `allow-has-key`
 - `allow-remove`
 - `allow-clear`
 - `allow-keys`
@@ -80,7 +80,7 @@ Denies the get command without any pre-configured scope.
 </td>
 <td>
 
-Enables the has_key command without any pre-configured scope.
+Enables the has-key command without any pre-configured scope.
 
 </td>
 </tr>
@@ -93,7 +93,7 @@ Enables the has_key command without any pre-configured scope.
 </td>
 <td>
 
-Denies the has_key command without any pre-configured scope.
+Denies the has-key command without any pre-configured scope.
 
 </td>
 </tr>
@@ -120,32 +120,6 @@ Enables the keys command without any pre-configured scope.
 <td>
 
 Denies the keys command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`cache:allow-ping`
-
-</td>
-<td>
-
-Enables the ping command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`cache:deny-ping`
-
-</td>
-<td>
-
-Denies the ping command without any pre-configured scope.
 
 </td>
 </tr>
