@@ -20,4 +20,3 @@ tauri-build = { version = "2.2.0", default-features = false , features = [] }
 [dependencies]
 tauri = { version = "2.5.1", features = [] }
 tauri-plugin-cache = { path = "../../../" }
-

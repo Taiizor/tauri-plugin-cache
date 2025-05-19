@@ -3,14 +3,14 @@ name: Check
 on:
   push:
     branches:
-      - main
+      - develop
     paths:
       - ".github/workflows/check.yml"
       - "**/*.rs"
       - "**/Cargo.toml"
   pull_request:
     branches:
-      - main
+      - develop
     paths:
       - ".github/workflows/check.yml"
       - "**/*.rs"

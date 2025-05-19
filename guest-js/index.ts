@@ -113,7 +113,7 @@ export async function clear(): Promise<void> {
  * @example
  * ```typescript
  * const stats = await cache.stats();
- * console.log(`Cache has ${stats.size} items`);
+ * console.log(`Cache has ${cacheStats.totalSize} items (${cacheStats.activeSize} active)`);
  * ```
  */
 export async function stats(): Promise<CacheStats> {

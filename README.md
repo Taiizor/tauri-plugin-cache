@@ -30,9 +30,9 @@ tauri-plugin-cache = "0.1.0"
 Add the plugin API package to your project:
 
 ```bash
-npm install tauri-plugin-cache-api
+npm install tauri-plugin-cache
 # or
-yarn add tauri-plugin-cache-api
+yarn add tauri-plugin-cache
 ```
 
 ## Setup
