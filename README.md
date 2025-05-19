@@ -76,7 +76,7 @@ await remove('user');
 
 // Get cache statistics
 const cacheStats = await stats();
-console.log(`Cache has ${cacheStats.size} items`);
+console.log(`Cache has ${cacheStats.totalSize} items (${cacheStats.activeSize} active)`);
 
 // Clear all values
 await clear();

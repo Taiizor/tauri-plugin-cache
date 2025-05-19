@@ -85,12 +85,14 @@ pub struct HasRequest {
     pub key: String,
 }
 
-/// Simple stats about the cache
+/// Enhanced statistics about the cache
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CacheStats {
-    /// Number of items in the cache
-    pub size: usize,
+    /// Total number of items in the cache (including expired items that haven't been cleaned up yet)
+    pub total_size: usize,
+    /// Number of active (non-expired) items in the cache
+    pub active_size: usize,
 }
 
 /// Response containing a boolean value

@@ -188,6 +188,26 @@ impl<R: Runtime> Cache<R> {
     let data_map = self.data.read().unwrap();
     Ok(data_map.len())
   }
+
+  /// Gets the number of active (non-expired) items in the cache
+  pub fn active_size(&self) -> crate::Result<usize> {
+    let data_map = self.data.read().unwrap();
+    
+    let now = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .map_err(|e| Error::Cache(e.to_string()))?
+      .as_secs();
+    
+    let active_count = data_map.iter().filter(|(_, entry)| {
+      if let Some(expires_at) = entry.expires_at {
+        expires_at >= now // Not expired
+      } else {
+        true // No expiration set
+      }
+    }).count();
+    
+    Ok(active_count)
+  }
   
   /// Sets the cleanup interval in seconds
   pub fn set_cleanup_interval(&mut self, seconds: u64) {

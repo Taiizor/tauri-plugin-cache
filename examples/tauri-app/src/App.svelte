@@ -43,7 +43,7 @@
 	
 	function getStats() {
 		stats()
-			.then(result => updateResponse(`Cache stats: ${JSON.stringify(result)}`))
+			.then(result => updateResponse(`Cache stats: Total items: ${result.totalSize}, Active items: ${result.activeSize}`))
 			.catch(err => updateResponse(`Error: ${err.toString()}`))
 	}
 </script>

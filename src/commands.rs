@@ -58,8 +58,9 @@ pub(crate) async fn stats<R: Runtime>(
 ) -> Result<CacheStats> {
     #[cfg(desktop)]
     {
-        let size = app.cache().size()?;
-        Ok(CacheStats { size })
+        let total_size = app.cache().size()?;
+        let active_size = app.cache().active_size()?;
+        Ok(CacheStats { total_size, active_size })
     }
     
     #[cfg(mobile)]
