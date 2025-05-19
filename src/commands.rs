@@ -7,10 +7,10 @@ use crate::CacheExt;
 
 /// Set a value in the cache with optional TTL
 #[command]
-pub(crate) async fn set<R: Runtime, T: Serialize + for<'de> Deserialize<'de>>(
+pub(crate) async fn set<R: Runtime>(
     app: AppHandle<R>,
     key: String,
-    value: T,
+    value: serde_json::Value,
     options: Option<SetItemOptions>,
 ) -> Result<EmptyResponse> {
     app.cache().set(key, value, options)

@@ -80,10 +80,12 @@ impl<R: Runtime> Cache<R> {
   }
 
   /// Sets a value in the cache with an optional TTL
-  pub fn set<T: Serialize>(&self, key: String, value: T, options: Option<SetItemOptions>) -> crate::Result<EmptyResponse> {
-    // Serialize the value to JSON
-    let json_value = serde_json::to_value(value)
-      .map_err(|e| Error::Json(e))?;
+  pub fn set<T: Serialize + std::fmt::Debug>(&self, key: String, value: T, options: Option<SetItemOptions>) -> crate::Result<EmptyResponse> {
+    // Check if T is already serde_json::Value to avoid double serialization
+    let json_value = match serde_json::to_value(value) {
+      Ok(v) => v,
+      Err(e) => return Err(Error::Json(e)),
+    };
 
     // Calculate expiration time if TTL is provided
     let expires_at = if let Some(opts) = options {
