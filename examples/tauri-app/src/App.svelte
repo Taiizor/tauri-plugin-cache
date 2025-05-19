@@ -162,7 +162,7 @@
   }
 
   .response-content {
-    background-color: #f9f9f9;
+    background-color: #0e0b0b;
     padding: 10px;
     border-radius: 4px;
     max-height: 200px;

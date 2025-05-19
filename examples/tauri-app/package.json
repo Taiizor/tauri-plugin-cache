@@ -10,13 +10,13 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.0.0",
-    "tauri-plugin-cache-api": "file:../../"
+    "@tauri-apps/api": "^2.5.0",
+    "tauri-plugin-cache-api": "file:..\\.."
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^5.0.0",
-    "svelte": "^5.0.0",
-    "vite": "^6.0.0",
-    "@tauri-apps/cli": "^2.0.0"
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tauri-apps/cli": "^2.5.0",
+    "svelte": "^5.30.2",
+    "vite": "^6.3.5"
   }
 }

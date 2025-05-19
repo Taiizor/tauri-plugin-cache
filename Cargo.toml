@@ -12,7 +12,7 @@ repository = "https://github.com/Taiizor/tauri-plugin-cache"
 readme = "README.md"
 
 [dependencies]
-tauri = { version = "2.5.0" }
+tauri = { version = "2.5.1" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2"

@@ -45,8 +45,7 @@ impl<R: Runtime> Cache<R> {
     let data_clone = self.data.clone();
     let interval = self.cleanup_interval;
     
-    // Use tauri's event loop to periodically clean up expired items
-    let app_handle = self.app.clone();
+    // Use a background thread to periodically clean up expired items
     std::thread::spawn(move || {
       loop {
         std::thread::sleep(Duration::from_secs(interval));

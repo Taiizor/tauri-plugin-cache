@@ -27,7 +27,7 @@ pub struct Cache<R: Runtime>(PluginHandle<R>);
 impl<R: Runtime> Cache<R> {
   /// Sets a value in the cache with optional TTL
   pub fn set<T: Serialize>(&self, key: String, value: T, options: Option<SetItemOptions>) -> crate::Result<EmptyResponse> {
-    let request = SetRequest {
+    let request = SetRequest::<T> {
       key,
       value,
       options,
