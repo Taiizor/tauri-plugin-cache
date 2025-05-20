@@ -7,7 +7,9 @@ A Tauri v2 plugin for caching data in memory with optional time-to-live (TTL) fu
 ## Features
 
 - **In-Memory Cache**: Fast data storage and retrieval
+- **Persistent Storage**: Optionally persists cache to disk
 - **Optional TTL**: Set expiration times for cache items
+- **Configurable Cache Location**: Customize where cache files are stored
 - **Cross-Platform**: Works on desktop and mobile
 - **Type Safety**: Full TypeScript typings
 - **Automatic Cleanup**: Background task to remove expired items
@@ -40,10 +42,24 @@ yarn add tauri-plugin-cache
 Register the plugin in your `tauri.conf.json` and/or in your Rust code:
 
 ```rust
-// Rust (often in main.rs or lib.rs)
+// Basic setup with default configuration
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_cache::init())
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
+
+// Or with custom configuration
+fn main() {
+    let cache_config = tauri_plugin_cache::CacheConfig {
+        cache_dir: Some("/custom/cache/path".into()),        // Custom cache directory
+        cache_file_name: Some("my_app_cache.json".into()),   // Custom cache file name
+        cleanup_interval: Some(120),                         // Clean expired items every 120 seconds
+    };
+    
+    tauri::Builder::default()
+        .plugin(tauri_plugin_cache::init_with_config(cache_config))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

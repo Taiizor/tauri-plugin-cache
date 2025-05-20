@@ -107,3 +107,25 @@ pub struct BooleanResponse {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EmptyResponse {}
+
+/// Configuration options for the cache plugin
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CacheConfig {
+    /// Custom directory path for storing cache files
+    pub cache_dir: Option<String>,
+    /// Custom file name for the cache file
+    pub cache_file_name: Option<String>,
+    /// Cleanup interval in seconds
+    pub cleanup_interval: Option<u64>,
+}
+
+impl Default for CacheConfig {
+    fn default() -> Self {
+        Self {
+            cache_dir: None,
+            cache_file_name: None,
+            cleanup_interval: Some(60), // Default 60 seconds
+        }
+    }
+}

@@ -1,14 +1,16 @@
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tauri::{plugin::PluginApi, AppHandle, Runtime};
+use tauri::{plugin::PluginApi, AppHandle, Manager, Runtime};
 
 use crate::models::*;
 use crate::Error;
 
 // Store the value and its optional expiry time in a single struct for better organization
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct CacheEntry {
     value: serde_json::Value,
     expires_at: Option<u64>,
@@ -20,10 +22,75 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
   app: &AppHandle<R>,
   _api: PluginApi<R, C>,
 ) -> crate::Result<Cache<R>> {
+  // Try to get configuration from the plugin API
+  let config = CacheConfig::default();
+  
+  // Determine the cache directory
+  let cache_dir = if let Some(custom_dir) = config.cache_dir {
+    PathBuf::from(custom_dir)
+  } else {
+    app.path().app_cache_dir()
+      .map_err(|e| Error::Cache(format!("Failed to get app cache directory: {}", e)))?
+  };
+  
+  // Create the cache directory if it doesn't exist
+  fs::create_dir_all(&cache_dir)
+    .map_err(|e| Error::Cache(format!("Failed to create cache directory: {}", e)))?;
+  
+  // Determine the cache file name
+  let cache_file_name = config.cache_file_name.as_deref().unwrap_or("tauri_cache.json");
+  let cache_file_path = cache_dir.join(cache_file_name);
+  
+  // Load existing cache from file if it exists
+  let data: HashMap<String, CacheEntry> = if cache_file_path.exists() {
+    match fs::read_to_string(&cache_file_path) {
+      Ok(content) => {
+        serde_json::from_str(&content).unwrap_or_else(|_| HashMap::new())
+      }
+      Err(_) => HashMap::new()
+    }
+  } else {
+    HashMap::new()
+  };
+  
+  let cleanup_interval = config.cleanup_interval.unwrap_or(60);
+
   let cache = Cache {
     app: app.clone(),
-    data: Arc::new(RwLock::new(HashMap::new())),
-    cleanup_interval: 60, // Default cleanup every 60 seconds
+    data: Arc::new(RwLock::new(data)),
+    cache_file_path,
+    cleanup_interval,
+  };
+
+  // Set up a background task to clean expired entries periodically
+  cache.start_cleanup_task();
+
+  Ok(cache)
+}
+
+pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
+  app: &AppHandle<R>,
+  _api: PluginApi<R, C>,
+  cache_file_path: PathBuf,
+  cleanup_interval: u64
+) -> crate::Result<Cache<R>> {
+  // Load existing cache from file if it exists
+  let data: HashMap<String, CacheEntry> = if cache_file_path.exists() {
+    match fs::read_to_string(&cache_file_path) {
+      Ok(content) => {
+        serde_json::from_str(&content).unwrap_or_else(|_| HashMap::new())
+      }
+      Err(_) => HashMap::new()
+    }
+  } else {
+    HashMap::new()
+  };
+
+  let cache = Cache {
+    app: app.clone(),
+    data: Arc::new(RwLock::new(data)),
+    cache_file_path,
+    cleanup_interval,
   };
 
   // Set up a background task to clean expired entries periodically
@@ -36,6 +103,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct Cache<R: Runtime> {
   app: AppHandle<R>,
   data: CacheStorage,
+  cache_file_path: PathBuf,
   cleanup_interval: u64,
 }
 
@@ -44,6 +112,7 @@ impl<R: Runtime> Cache<R> {
   fn start_cleanup_task(&self) {
     let data_clone = self.data.clone();
     let interval = self.cleanup_interval;
+    let cache_file_path = self.cache_file_path.clone();
     
     // Use a background thread to periodically clean up expired items
     std::thread::spawn(move || {
@@ -72,11 +141,32 @@ impl<R: Runtime> Cache<R> {
           })
           .collect();
         
+        let mut modified = false;
         for key in expired_keys {
           data.remove(&key);
+          modified = true;
+        }
+        
+        // Save to file if cache was modified
+        if modified {
+          if let Ok(json) = serde_json::to_string(&*data) {
+            let _ = fs::write(&cache_file_path, json);
+          }
         }
       }
     });
+  }
+  
+  /// Save the current cache to file
+  fn save_to_file(&self) -> crate::Result<()> {
+    let data = self.data.read().unwrap();
+    let json = serde_json::to_string(&*data)
+      .map_err(|e| Error::Json(e))?;
+    
+    fs::write(&self.cache_file_path, json)
+      .map_err(|e| Error::Cache(format!("Failed to write cache to file: {}", e)))?;
+    
+    Ok(())
   }
 
   /// Sets a value in the cache with an optional TTL
@@ -116,6 +206,10 @@ impl<R: Runtime> Cache<R> {
     // Store the entry
     let mut data_map = self.data.write().unwrap();
     data_map.insert(key, entry);
+    
+    // Save to file
+    drop(data_map); // Release the write lock before saving
+    self.save_to_file()?;
 
     Ok(EmptyResponse {})
   }
@@ -173,6 +267,11 @@ impl<R: Runtime> Cache<R> {
   pub fn remove(&self, key: &str) -> crate::Result<EmptyResponse> {
     let mut data_map = self.data.write().unwrap();
     data_map.remove(key);
+    
+    // Save changes to file
+    drop(data_map); // Release the write lock before saving
+    self.save_to_file()?;
+    
     Ok(EmptyResponse {})
   }
 
@@ -180,6 +279,11 @@ impl<R: Runtime> Cache<R> {
   pub fn clear(&self) -> crate::Result<EmptyResponse> {
     let mut data_map = self.data.write().unwrap();
     data_map.clear();
+    
+    // Save changes to file
+    drop(data_map); // Release the write lock before saving
+    self.save_to_file()?;
+    
     Ok(EmptyResponse {})
   }
   
@@ -209,8 +313,8 @@ impl<R: Runtime> Cache<R> {
     Ok(active_count)
   }
   
-  /// Sets the cleanup interval in seconds
-  pub fn set_cleanup_interval(&mut self, seconds: u64) {
-    self.cleanup_interval = seconds;
+  /// Gets the path to the cache file
+  pub fn get_cache_file_path(&self) -> PathBuf {
+    self.cache_file_path.clone()
   }
 }
