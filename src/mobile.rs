@@ -21,6 +21,30 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
   Ok(Cache(handle))
 }
 
+/// Initializes the plugin with custom configuration
+pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
+  _app: &AppHandle<R>,
+  api: PluginApi<R, C>,
+  config: CacheConfig
+) -> crate::Result<Cache<R>> {
+  // Register the plugin with API
+  #[cfg(target_os = "android")]
+  let handle = {
+    // Pass configuration to Android
+    let config_json = serde_json::to_string(&config).unwrap_or_default();
+    api.register_android_plugin_with_config("app.tauri.plugin.cache", "CachePlugin", config_json)?
+  };
+  
+  #[cfg(target_os = "ios")]
+  let handle = {
+    // Pass configuration to iOS
+    let config_json = serde_json::to_string(&config).unwrap_or_default();
+    api.register_ios_plugin_with_config(init_plugin_cache, config_json)?
+  };
+  
+  Ok(Cache(handle))
+}
+
 /// Access to the cache APIs.
 pub struct Cache<R: Runtime>(PluginHandle<R>);
 

@@ -91,7 +91,24 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
       };
       
       #[cfg(mobile)]
-      let cache = mobile::init(app, api)?;
+      let cache = {
+        let cache_dir = if let Some(custom_dir) = config_clone.cache_dir.as_deref() {
+          std::path::PathBuf::from(custom_dir)
+        } else {
+          app.path().app_cache_dir()
+            .map_err(|e| crate::Error::Cache(format!("Failed to get app cache directory: {}", e)))?
+        };
+        
+        // Create the cache directory if it doesn't exist
+        std::fs::create_dir_all(&cache_dir)
+          .map_err(|e| crate::Error::Cache(format!("Failed to create cache directory: {}", e)))?;
+        
+        // Determine the cache file name
+        let cache_file_name = config_clone.cache_file_name.as_deref().unwrap_or("tauri_cache.json");
+        let cache_file_path = cache_dir.join(cache_file_name);
+        
+        mobile::init_with_config(app, api, cache_file_path, config_clone.cleanup_interval.unwrap_or(60))?
+      };
       
       app.manage(cache);
       Ok(())
