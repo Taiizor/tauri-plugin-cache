@@ -14,36 +14,12 @@ use tauri::{plugin::PluginApi, AppHandle, Runtime};
 use crate::models::*;
 use crate::Error;
 
-// The size threshold in bytes after which compression will be applied
-const COMPRESSION_THRESHOLD: usize = 1024; // 1KB
-
 // Store the value and its optional expiry time in a single struct for better organization
 #[derive(Clone, Serialize, Deserialize)]
 struct CacheEntry {
     value: serde_json::Value,
     expires_at: Option<u64>,
     is_compressed: Option<bool>,
-}
-
-/// Enhanced configuration for cache compression
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct CompressionConfig {
-    /// Enable or disable compression
-    pub enabled: bool,
-    /// Compression level (0-9, where 0 is no compression and 9 is max compression)
-    pub level: u32,
-    /// Threshold in bytes after which compression is applied
-    pub threshold: usize,
-}
-
-impl Default for CompressionConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            level: 6,  // Default compression level
-            threshold: COMPRESSION_THRESHOLD,
-        }
-    }
 }
 
 // Initialize the cache with a custom configuration

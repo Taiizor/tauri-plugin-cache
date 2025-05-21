@@ -21,9 +21,6 @@ use desktop::Cache;
 #[cfg(mobile)]
 use mobile::Cache;
 
-#[cfg(desktop)]
-pub use desktop::CompressionConfig;
-
 /// Extensions to [`tauri::App`], [`tauri::AppHandle`] and [`tauri::Window`] to access the cache APIs.
 pub trait CacheExt<R: Runtime> {
     fn cache(&self) -> &Cache<R>;

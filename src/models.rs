@@ -1,5 +1,8 @@
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+// The size threshold in bytes after which compression will be applied
+pub const COMPRESSION_THRESHOLD: usize = 1024; // 1KB
+
 /// Options for setting an item in the cache
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -110,6 +113,27 @@ pub struct BooleanResponse {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EmptyResponse {}
+
+/// Enhanced configuration for cache compression
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CompressionConfig {
+    /// Enable or disable compression
+    pub enabled: bool,
+    /// Compression level (0-9, where 0 is no compression and 9 is max compression)
+    pub level: u32,
+    /// Threshold in bytes after which compression is applied
+    pub threshold: usize,
+}
+
+impl Default for CompressionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            level: 6,  // Default compression level
+            threshold: COMPRESSION_THRESHOLD,
+        }
+    }
+}
 
 /// Configuration options for the cache plugin
 #[derive(Debug, Clone, Deserialize, Serialize)]
