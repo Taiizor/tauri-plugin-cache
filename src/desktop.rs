@@ -14,6 +14,11 @@ use tauri::{plugin::PluginApi, AppHandle, Runtime};
 use crate::models::*;
 use crate::Error;
 
+// Define a type alias for the complex cache value type
+type CacheValueEntry = (serde_json::Value, Option<u64>);
+type CacheValueMap = HashMap<String, CacheValueEntry>;
+type ThreadSafeCacheMap = Arc<Mutex<CacheValueMap>>;
+
 // Store the value and its optional expiry time in a single struct for better organization
 #[derive(Clone, Serialize, Deserialize)]
 struct CacheEntry {
@@ -52,7 +57,7 @@ pub struct Cache<R: Runtime> {
     cleanup_interval: u64,
     file_mutex: Arc<Mutex<()>>,
     compression: CompressionConfig,
-    value_cache: Arc<Mutex<HashMap<String, (serde_json::Value, Option<u64>)>>>,
+    value_cache: ThreadSafeCacheMap,
 }
 
 impl<R: Runtime> Cache<R> {
