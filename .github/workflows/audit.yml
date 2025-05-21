@@ -19,6 +19,7 @@ on:
       - ".github/workflows/audit.yml"
 
 permissions:
+  issues: write
   contents: read
   pull-requests: write
 
