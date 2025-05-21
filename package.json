@@ -2,7 +2,7 @@
   "name": "tauri-plugin-cache-api",
   "version": "0.1.0",
   "author": "Taiizor",
-  "description": "Tauri plugin for caching data in memory with optional TTL",
+  "description": "A Tauri plugin for caching data on disk with optional TTL",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -11,7 +11,7 @@
   "keywords": [
     "tauri",
     "plugin",
-    "cache",
+    "disk",
     "memory",
     "ttl"
   ],

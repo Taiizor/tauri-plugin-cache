@@ -2,7 +2,7 @@
 name = "tauri-plugin-cache"
 version = "0.1.0"
 authors = ["Taiizor <taiizor@vegalya.com>"]
-description = "A Tauri plugin for caching data in memory with optional TTL"
+description = "A Tauri plugin for caching data on disk with optional TTL"
 edition = "2021"
 rust-version = "1.77.2"
 exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]

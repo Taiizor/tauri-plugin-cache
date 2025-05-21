@@ -2,12 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Taiizor/tauri-plugin-cache/blob/develop/LICENSE)
 
-A Tauri v2 plugin for caching data in memory with optional time-to-live (TTL) functionality. This plugin allows your Tauri application to store and retrieve data with expiration management.
+A Tauri plugin for caching data on disk with optional time-to-live (TTL) functionality. This plugin allows your Tauri application to store and retrieve data with expiration management.
 
 ## Features
 
-- **In-Memory Cache**: Fast data storage and retrieval
-- **Persistent Storage**: Optionally persists cache to disk
+- **Disk-based Cache**: Persistent data storage and retrieval
+- **Customizable Storage**: Configure where cache files are stored
 - **Optional TTL**: Set expiration times for cache items
 - **Configurable Cache Location**: Customize where cache files are stored
 - **Cross-Platform**: Works on desktop and mobile

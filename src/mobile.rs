@@ -1,10 +1,12 @@
 use serde::{de::DeserializeOwned, Serialize};
+use std::path::PathBuf;
 use tauri::{
   plugin::{PluginApi, PluginHandle},
   AppHandle, Runtime,
 };
 
 use crate::models::*;
+use crate::Error;
 
 #[cfg(target_os = "ios")]
 tauri::ios_plugin_binding!(init_plugin_cache);
@@ -21,12 +23,20 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
   Ok(Cache(handle))
 }
 
-/// Initializes the plugin with custom configuration
+// Initialize the plugin with a custom cache file path
 pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
   _app: &AppHandle<R>,
   api: PluginApi<R, C>,
-  config: CacheConfig
+  cache_file_path: PathBuf,
+  cleanup_interval: u64
 ) -> crate::Result<Cache<R>> {
+  // Create config for mobile platforms
+  let config = CacheConfig {
+    cache_dir: cache_file_path.parent().map(|p| p.to_string_lossy().to_string()),
+    cache_file_name: cache_file_path.file_name().map(|f| f.to_string_lossy().to_string()),
+    cleanup_interval: Some(cleanup_interval),
+  };
+
   // Register the plugin with API
   #[cfg(target_os = "android")]
   let handle = {

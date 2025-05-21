@@ -1,8 +1,9 @@
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::io::{self, Read, Write};
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{plugin::PluginApi, AppHandle, Manager, Runtime};
 
@@ -16,8 +17,7 @@ struct CacheEntry {
     expires_at: Option<u64>,
 }
 
-type CacheStorage = Arc<RwLock<HashMap<String, CacheEntry>>>;
-
+// Disk-based cache store
 pub fn init<R: Runtime, C: DeserializeOwned>(
   app: &AppHandle<R>,
   _api: PluginApi<R, C>,
@@ -41,25 +41,13 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
   let cache_file_name = config.cache_file_name.as_deref().unwrap_or("tauri_cache.json");
   let cache_file_path = cache_dir.join(cache_file_name);
   
-  // Load existing cache from file if it exists
-  let data: HashMap<String, CacheEntry> = if cache_file_path.exists() {
-    match fs::read_to_string(&cache_file_path) {
-      Ok(content) => {
-        serde_json::from_str(&content).unwrap_or_else(|_| HashMap::new())
-      }
-      Err(_) => HashMap::new()
-    }
-  } else {
-    HashMap::new()
-  };
-  
   let cleanup_interval = config.cleanup_interval.unwrap_or(60);
 
   let cache = Cache {
     app: app.clone(),
-    data: Arc::new(RwLock::new(data)),
     cache_file_path,
     cleanup_interval,
+    file_mutex: Arc::new(Mutex::new(())),
   };
 
   // Set up a background task to clean expired entries periodically
@@ -74,23 +62,11 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
   cache_file_path: PathBuf,
   cleanup_interval: u64
 ) -> crate::Result<Cache<R>> {
-  // Load existing cache from file if it exists
-  let data: HashMap<String, CacheEntry> = if cache_file_path.exists() {
-    match fs::read_to_string(&cache_file_path) {
-      Ok(content) => {
-        serde_json::from_str(&content).unwrap_or_else(|_| HashMap::new())
-      }
-      Err(_) => HashMap::new()
-    }
-  } else {
-    HashMap::new()
-  };
-
   let cache = Cache {
     app: app.clone(),
-    data: Arc::new(RwLock::new(data)),
     cache_file_path,
     cleanup_interval,
+    file_mutex: Arc::new(Mutex::new(())),
   };
 
   // Set up a background task to clean expired entries periodically
@@ -102,15 +78,15 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
 /// Access to the cache APIs.
 pub struct Cache<R: Runtime> {
   app: AppHandle<R>,
-  data: CacheStorage,
   cache_file_path: PathBuf,
   cleanup_interval: u64,
+  file_mutex: Arc<Mutex<()>>,
 }
 
 impl<R: Runtime> Cache<R> {
   /// Start a background task to periodically clean up expired cache entries
   fn start_cleanup_task(&self) {
-    let data_clone = self.data.clone();
+    let file_mutex = self.file_mutex.clone();
     let interval = self.cleanup_interval;
     let cache_file_path = self.cache_file_path.clone();
     
@@ -125,7 +101,16 @@ impl<R: Runtime> Cache<R> {
           .unwrap()
           .as_secs();
         
-        let mut data = data_clone.write().unwrap();
+        // Lock the file for exclusive access
+        let _guard = file_mutex.lock().unwrap();
+        
+        // Read the current cache
+        let mut data: HashMap<String, CacheEntry> = match Self::read_from_file(&cache_file_path) {
+          Ok(data) => data,
+          Err(_) => continue, // Skip this cleanup cycle if file cannot be read
+        };
+        
+        // Filter out expired entries
         let expired_keys: Vec<String> = data
           .iter()
           .filter_map(|(key, entry)| {
@@ -149,28 +134,49 @@ impl<R: Runtime> Cache<R> {
         
         // Save to file if cache was modified
         if modified {
-          if let Ok(json) = serde_json::to_string(&*data) {
-            let _ = fs::write(&cache_file_path, json);
-          }
+          let _ = Self::write_to_file(&cache_file_path, &data);
         }
       }
     });
   }
   
-  /// Save the current cache to file
-  fn save_to_file(&self) -> crate::Result<()> {
-    let data = self.data.read().unwrap();
-    let json = serde_json::to_string(&*data)
-      .map_err(|e| Error::Json(e))?;
+  /// Read cache data from file
+  fn read_from_file(path: &PathBuf) -> io::Result<HashMap<String, CacheEntry>> {
+    if !path.exists() {
+      return Ok(HashMap::new());
+    }
     
-    fs::write(&self.cache_file_path, json)
-      .map_err(|e| Error::Cache(format!("Failed to write cache to file: {}", e)))?;
+    let mut file = fs::File::open(path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
     
+    if contents.is_empty() {
+      return Ok(HashMap::new());
+    }
+    
+    match serde_json::from_str(&contents) {
+      Ok(data) => Ok(data),
+      Err(_) => Ok(HashMap::new())
+    }
+  }
+  
+  /// Write cache data to file
+  fn write_to_file(path: &PathBuf, data: &HashMap<String, CacheEntry>) -> io::Result<()> {
+    let json = serde_json::to_string(data)?;
+    let mut file = fs::File::create(path)?;
+    file.write_all(json.as_bytes())?;
     Ok(())
   }
 
   /// Sets a value in the cache with an optional TTL
   pub fn set<T: Serialize + std::fmt::Debug>(&self, key: String, value: T, options: Option<SetItemOptions>) -> crate::Result<EmptyResponse> {
+    // Acquire lock for file operations
+    let _guard = self.file_mutex.lock().unwrap();
+    
+    // Get current cache data
+    let mut data = Self::read_from_file(&self.cache_file_path)
+      .map_err(|e| Error::Cache(format!("Failed to read cache file: {}", e)))?;
+    
     // Check if T is already serde_json::Value to avoid double serialization
     let json_value = match serde_json::to_value(value) {
       Ok(v) => v,
@@ -204,31 +210,34 @@ impl<R: Runtime> Cache<R> {
     };
 
     // Store the entry
-    let mut data_map = self.data.write().unwrap();
-    data_map.insert(key, entry);
+    data.insert(key, entry);
     
     // Save to file
-    drop(data_map); // Release the write lock before saving
-    self.save_to_file()?;
+    Self::write_to_file(&self.cache_file_path, &data)
+      .map_err(|e| Error::Cache(format!("Failed to write cache file: {}", e)))?;
 
     Ok(EmptyResponse {})
   }
 
   /// Gets a value from the cache
   pub fn get(&self, key: &str) -> crate::Result<Option<serde_json::Value>> {
+    // Acquire lock for file operations
+    let _guard = self.file_mutex.lock().unwrap();
+    
+    // Get current time
     let now = SystemTime::now()
       .duration_since(UNIX_EPOCH)
       .map_err(|e| Error::Cache(e.to_string()))?
       .as_secs();
       
-    let data_map = self.data.read().unwrap();
+    // Load data from file
+    let data = Self::read_from_file(&self.cache_file_path)
+      .map_err(|e| Error::Cache(format!("Failed to read cache file: {}", e)))?;
     
-    if let Some(entry) = data_map.get(key) {
+    if let Some(entry) = data.get(key) {
       // Check if the entry has expired
       if let Some(expires_at) = entry.expires_at {
         if expires_at < now {
-          // We can't remove it here because we only have a read lock
-          // The cleanup task will remove it eventually
           return Ok(None);
         }
       }
@@ -242,14 +251,20 @@ impl<R: Runtime> Cache<R> {
 
   /// Checks if a key exists in the cache and hasn't expired
   pub fn has(&self, key: &str) -> crate::Result<BooleanResponse> {
+    // Acquire lock for file operations
+    let _guard = self.file_mutex.lock().unwrap();
+    
+    // Get current time
     let now = SystemTime::now()
       .duration_since(UNIX_EPOCH)
       .map_err(|e| Error::Cache(e.to_string()))?
       .as_secs();
-      
-    let data_map = self.data.read().unwrap();
     
-    if let Some(entry) = data_map.get(key) {
+    // Load data from file
+    let data = Self::read_from_file(&self.cache_file_path)
+      .map_err(|e| Error::Cache(format!("Failed to read cache file: {}", e)))?;
+    
+    if let Some(entry) = data.get(key) {
       // Check if the entry has expired
       if let Some(expires_at) = entry.expires_at {
         if expires_at < now {
@@ -265,44 +280,63 @@ impl<R: Runtime> Cache<R> {
 
   /// Removes a value from the cache
   pub fn remove(&self, key: &str) -> crate::Result<EmptyResponse> {
-    let mut data_map = self.data.write().unwrap();
-    data_map.remove(key);
+    // Acquire lock for file operations
+    let _guard = self.file_mutex.lock().unwrap();
     
-    // Save changes to file
-    drop(data_map); // Release the write lock before saving
-    self.save_to_file()?;
+    // Load data from file
+    let mut data = Self::read_from_file(&self.cache_file_path)
+      .map_err(|e| Error::Cache(format!("Failed to read cache file: {}", e)))?;
+    
+    // Remove item if exists
+    if data.remove(key).is_some() {
+      // Save changes to file
+      Self::write_to_file(&self.cache_file_path, &data)
+        .map_err(|e| Error::Cache(format!("Failed to write cache file: {}", e)))?;
+    }
     
     Ok(EmptyResponse {})
   }
 
   /// Clears the entire cache
   pub fn clear(&self) -> crate::Result<EmptyResponse> {
-    let mut data_map = self.data.write().unwrap();
-    data_map.clear();
+    // Acquire lock for file operations
+    let _guard = self.file_mutex.lock().unwrap();
     
-    // Save changes to file
-    drop(data_map); // Release the write lock before saving
-    self.save_to_file()?;
+    // Just write an empty cache
+    Self::write_to_file(&self.cache_file_path, &HashMap::new())
+      .map_err(|e| Error::Cache(format!("Failed to write cache file: {}", e)))?;
     
     Ok(EmptyResponse {})
   }
   
   /// Gets the current size of the cache (number of entries)
   pub fn size(&self) -> crate::Result<usize> {
-    let data_map = self.data.read().unwrap();
-    Ok(data_map.len())
+    // Acquire lock for file operations
+    let _guard = self.file_mutex.lock().unwrap();
+    
+    // Load data from file
+    let data = Self::read_from_file(&self.cache_file_path)
+      .map_err(|e| Error::Cache(format!("Failed to read cache file: {}", e)))?;
+    
+    Ok(data.len())
   }
 
   /// Gets the number of active (non-expired) items in the cache
   pub fn active_size(&self) -> crate::Result<usize> {
-    let data_map = self.data.read().unwrap();
+    // Acquire lock for file operations
+    let _guard = self.file_mutex.lock().unwrap();
     
+    // Get current time
     let now = SystemTime::now()
       .duration_since(UNIX_EPOCH)
       .map_err(|e| Error::Cache(e.to_string()))?
       .as_secs();
     
-    let active_count = data_map.iter().filter(|(_, entry)| {
+    // Load data from file
+    let data = Self::read_from_file(&self.cache_file_path)
+      .map_err(|e| Error::Cache(format!("Failed to read cache file: {}", e)))?;
+    
+    let active_count = data.iter().filter(|(_, entry)| {
       if let Some(expires_at) = entry.expires_at {
         expires_at >= now // Not expired
       } else {
