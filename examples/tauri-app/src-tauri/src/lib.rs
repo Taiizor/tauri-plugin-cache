@@ -10,6 +10,7 @@ pub fn run() {
         cache_dir: Some("my_app_cache".into()),
         cache_file_name: Some("cache_data.json".into()),
         cleanup_interval: Some(120),
+        default_compression: Some(true),
     };
     
     tauri::Builder::default()

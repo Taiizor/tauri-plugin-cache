@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 /// Options for setting an item in the cache
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 pub struct SetItemOptions {
     /// Time-to-live in seconds
     pub ttl: Option<u64>,
+    /// Whether to compress the data before storing
+    pub compress: Option<bool>,
 }
 
 /// A cache item with its value and expiration time
@@ -16,14 +18,16 @@ pub struct CacheItem<T> {
     pub value: T,
     /// Unix timestamp in seconds when this item expires (if applicable)
     pub expires_at: Option<u64>,
+    /// Whether the data is compressed
+    pub is_compressed: Option<bool>,
 }
 
 /// Request to set an item in the cache
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SetRequest<T> 
-where 
-    T: Serialize + DeserializeOwned
+pub struct SetRequest<T>
+where
+    T: Serialize + DeserializeOwned,
 {
     /// The key to store the value under
     pub key: String,
@@ -35,11 +39,11 @@ where
 
 impl<'de, T> serde::Deserialize<'de> for SetRequest<T>
 where
-    T: Serialize + DeserializeOwned
+    T: Serialize + DeserializeOwned,
 {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>
+        D: serde::Deserializer<'de>,
     {
         #[derive(Deserialize)]
         struct Helper {
@@ -49,9 +53,8 @@ where
         }
 
         let helper = Helper::deserialize(deserializer)?;
-        
-        let value = serde_json::from_value(helper.value)
-            .map_err(serde::de::Error::custom)?;
+
+        let value = serde_json::from_value(helper.value).map_err(serde::de::Error::custom)?;
 
         Ok(SetRequest {
             key: helper.key,
@@ -118,6 +121,8 @@ pub struct CacheConfig {
     pub cache_file_name: Option<String>,
     /// Cleanup interval in seconds
     pub cleanup_interval: Option<u64>,
+    /// Default compression setting for new items
+    pub default_compression: Option<bool>,
 }
 
 impl Default for CacheConfig {
@@ -125,7 +130,8 @@ impl Default for CacheConfig {
         Self {
             cache_dir: None,
             cache_file_name: None,
-            cleanup_interval: Some(60), // Default 60 seconds
+            cleanup_interval: Some(60),       // Default 60 seconds
+            default_compression: Some(false), // Default no compression
         }
     }
 }

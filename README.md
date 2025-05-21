@@ -9,6 +9,7 @@ A Tauri plugin for caching data on disk with optional time-to-live (TTL) functio
 - **Disk-based Cache**: Persistent data storage and retrieval
 - **Customizable Storage**: Configure where cache files are stored
 - **Optional TTL**: Set expiration times for cache items
+- **Data Compression**: Enable compression for large data items
 - **Configurable Cache Location**: Customize where cache files are stored
 - **Cross-Platform**: Works on desktop and mobile
 - **Type Safety**: Full TypeScript typings
@@ -56,6 +57,7 @@ fn main() {
         cache_dir: Some("my_app_cache".into()),           // Custom subdirectory within app's cache directory
         cache_file_name: Some("cache_data.json".into()),  // Custom cache file name
         cleanup_interval: Some(120),                      // Clean expired items every 120 seconds
+        default_compression: Some(true),                  // Enable compression by default
     };
     
     tauri::Builder::default()
@@ -76,6 +78,12 @@ import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache-api';
 
 // Store a value with TTL
 await set('user', { name: 'John', age: 30 }, { ttl: 60 }); // Expires in 60 seconds
+
+// Store a large value with compression
+await set('largeData', largeObject, { compress: true });
+
+// Store a value with both TTL and compression
+await set('temporaryData', data, { ttl: 300, compress: true });
 
 // Retrieve a value (returns null if not found or expired)
 const user = await get<{ name: string, age: number }>('user');
@@ -113,8 +121,18 @@ async fn demo_cache(app_handle: tauri::AppHandle) -> Result<String, String> {
     let cache = app_handle.cache();
     
     // Store a value with TTL
-    let options = Some(tauri_plugin_cache::SetItemOptions { ttl: Some(60) });
+    let options = Some(tauri_plugin_cache::SetItemOptions { 
+        ttl: Some(60),
+        compress: None, // Use default compression setting
+    });
     cache.set("key".to_string(), "value", options).map_err(|e| e.to_string())?;
+    
+    // Store a value with compression
+    let compress_options = Some(tauri_plugin_cache::SetItemOptions {
+        ttl: None,
+        compress: Some(true), // Enable compression
+    });
+    cache.set("large_key".to_string(), large_value, compress_options).map_err(|e| e.to_string())?;
     
     // Get a value
     let value: Option<String> = cache.get("key")
@@ -140,12 +158,13 @@ async fn demo_cache(app_handle: tauri::AppHandle) -> Result<String, String> {
 
 #### `set(key: string, value: any, options?: SetItemOptions): Promise<void>`
 
-Sets an item in the cache with optional TTL.
+Sets an item in the cache with optional TTL and compression.
 
 - `key`: The key to store the value under
 - `value`: The value to store (will be JSON serialized)
 - `options`: Optional settings
   - `ttl`: Time-to-live in seconds (item will be deleted after this time)
+  - `compress`: Whether to compress the data before storing
 
 #### `get<T = any>(key: string): Promise<T | null>`
 
@@ -176,7 +195,41 @@ Clears all items from the cache.
 Gets cache statistics.
 
 - Returns: An object with statistics about the cache
-  - `size`: Number of items in the cache
+  - `totalSize`: Total number of items in the cache
+  - `activeSize`: Number of active (non-expired) items
+
+## Compression
+
+This plugin supports data compression to reduce the disk space used by cache items. You can enable compression for individual items or set it as the default for all cache items.
+
+### Benefits of Compression
+
+- **Reduced Disk Usage**: Compresses data to save disk space
+- **Improved I/O Performance**: Smaller data sizes mean faster read/write operations
+- **Network Efficiency**: If you sync cache data over a network, compressed data reduces bandwidth usage
+
+### Configuration Options
+
+You can configure the default compression behavior when initializing the plugin:
+
+```rust
+let cache_config = tauri_plugin_cache::CacheConfig {
+    default_compression: Some(true), // Enable compression by default
+    // Other options...
+};
+```
+
+### Per-Item Compression
+
+You can override the default compression setting for individual items:
+
+```typescript
+// Force compression for this item regardless of default setting
+await set('largeData', largeObject, { compress: true });
+
+// Force no compression for this item
+await set('smallData', smallObject, { compress: false });
+```
 
 ## Platform Compatibility
 

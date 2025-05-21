@@ -1,8 +1,8 @@
-use tauri::{AppHandle, command, Runtime};
+use tauri::{command, AppHandle, Runtime};
 
 use crate::models::*;
-use crate::Result;
 use crate::CacheExt;
+use crate::Result;
 
 /// Set a value in the cache with optional TTL
 #[command]
@@ -26,42 +26,35 @@ pub(crate) async fn get<R: Runtime>(
 
 /// Check if a key exists in the cache and is not expired
 #[command]
-pub(crate) async fn has<R: Runtime>(
-    app: AppHandle<R>,
-    key: String,
-) -> Result<BooleanResponse> {
+pub(crate) async fn has<R: Runtime>(app: AppHandle<R>, key: String) -> Result<BooleanResponse> {
     app.cache().has(&key)
 }
 
 /// Remove a value from the cache
 #[command]
-pub(crate) async fn remove<R: Runtime>(
-    app: AppHandle<R>,
-    key: String,
-) -> Result<EmptyResponse> {
+pub(crate) async fn remove<R: Runtime>(app: AppHandle<R>, key: String) -> Result<EmptyResponse> {
     app.cache().remove(&key)
 }
 
 /// Clear all values from the cache
 #[command]
-pub(crate) async fn clear<R: Runtime>(
-    app: AppHandle<R>,
-) -> Result<EmptyResponse> {
+pub(crate) async fn clear<R: Runtime>(app: AppHandle<R>) -> Result<EmptyResponse> {
     app.cache().clear()
 }
 
 /// Get cache statistics
 #[command]
-pub(crate) async fn stats<R: Runtime>(
-    app: AppHandle<R>,
-) -> Result<CacheStats> {
+pub(crate) async fn stats<R: Runtime>(app: AppHandle<R>) -> Result<CacheStats> {
     #[cfg(desktop)]
     {
         let total_size = app.cache().size()?;
         let active_size = app.cache().active_size()?;
-        Ok(CacheStats { total_size, active_size })
+        Ok(CacheStats {
+            total_size,
+            active_size,
+        })
     }
-    
+
     #[cfg(mobile)]
     {
         app.cache().stats()

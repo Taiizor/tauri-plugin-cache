@@ -5,16 +5,35 @@
 	let response = ''
 	let key = 'test-key'
 	let value = 'test-value'
-	let ttl = 10
+	let ttl = '10'
+	let compress = false
 
 	function updateResponse(returnValue) {
 		response = `[${new Date().toLocaleTimeString()}] ` + (typeof returnValue === 'string' ? returnValue : JSON.stringify(returnValue)) + '<br>' + response
 	}
 
 	function setItem() {
-		set(key, value, { ttl: parseInt(ttl) || undefined })
-			.then(() => updateResponse(`Successfully set "${key}" with value: ${value}`))
+		const ttlValue = ttl !== '' ? parseInt(ttl) : undefined;
+		
+		set(key, value, { 
+			ttl: ttlValue,
+			compress: compress
+		})
+			.then(() => updateResponse(`Successfully set "${key}" with value: ${value}${compress ? ' (compressed)' : ''}`))
 			.catch(err => updateResponse(`Error: ${err.toString()}`))
+	}
+
+	// Büyük veri oluşturma fonksiyonu - sıkıştırmanın etkisini göstermek için
+	function generateLargeData() {
+		// 1000 elemanlı bir dizi oluştur
+		const largeArray = Array.from({ length: 1000 }, (_, i) => ({
+			id: i,
+			name: `Item ${i}`,
+			description: `This is a test description for item ${i} that has some repetitive text to demonstrate compression efficiency. Compression works best with repetitive content.`
+		}));
+		
+		value = JSON.stringify(largeArray);
+		updateResponse(`Generated large data (${(value.length / 1024).toFixed(2)} KB)`);
 	}
 
 	function getItem() {
@@ -77,12 +96,19 @@
     
     <div class="input-group">
       <label for="value">Value:</label>
-      <input id="value" bind:value={value} />
+      <textarea id="value" bind:value={value} rows="4"></textarea>
+      <button class="generate-btn" on:click={generateLargeData}>Generate Test Data</button>
     </div>
     
     <div class="input-group">
       <label for="ttl">TTL (seconds):</label>
       <input id="ttl" bind:value={ttl} type="number" min="0" />
+    </div>
+    
+    <div class="input-group checkbox-group">
+      <label for="compress">Compress data:</label>
+      <input id="compress" type="checkbox" bind:checked={compress} />
+      <div class="tooltip">Compression is recommended for large text data to save disk space</div>
     </div>
     
     <div class="button-group">
@@ -129,11 +155,40 @@
     font-weight: bold;
   }
 
-  .input-group input {
+  .input-group input, .input-group textarea {
     flex: 1;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
+  }
+  
+  .checkbox-group {
+    position: relative;
+  }
+  
+  .checkbox-group input[type="checkbox"] {
+    flex: initial;
+    width: auto;
+    margin-right: 10px;
+  }
+  
+  .input-group textarea {
+    font-family: monospace;
+    font-size: 12px;
+    resize: vertical;
+  }
+  
+  .tooltip {
+    font-size: 0.8em;
+    color: #666;
+    margin-left: 10px;
+    font-style: italic;
+  }
+  
+  .generate-btn {
+    margin-left: 10px;
+    padding: 4px 8px;
+    font-size: 0.8em;
   }
 
   .button-group {
@@ -169,5 +224,6 @@
     overflow-y: auto;
     white-space: pre-wrap;
     font-family: monospace;
+    color: #f1f1f1;
   }
 </style>

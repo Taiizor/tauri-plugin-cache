@@ -5,9 +5,13 @@ import { invoke } from '@tauri-apps/api/core'
  */
 export interface CacheStats {
   /**
-   * Number of items in the cache
+   * Total number of items in the cache
    */
-  size: number;
+  totalSize: number;
+  /**
+   * Number of active (non-expired) items in the cache
+   */
+  activeSize: number;
 }
 
 /**
@@ -18,10 +22,14 @@ export interface SetItemOptions {
    * Time-to-live in seconds. If not provided, the item will never expire.
    */
   ttl?: number;
+  /**
+   * Whether to compress the data before storing. If not provided, uses the default compression setting.
+   */
+  compress?: boolean;
 }
 
 /**
- * Sets an item in the cache with optional TTL
+ * Sets an item in the cache with optional TTL and compression
  * @param key The key to store the value under
  * @param value The value to store
  * @param options Options for setting the cache item
@@ -33,6 +41,12 @@ export interface SetItemOptions {
  * 
  * // Set an item that expires in 60 seconds
  * await cache.set('token', 'abc123', { ttl: 60 });
+ * 
+ * // Set an item with compression enabled
+ * await cache.set('largeData', largeObject, { compress: true });
+ * 
+ * // Set an item with both TTL and compression
+ * await cache.set('temporaryData', data, { ttl: 300, compress: true });
  * ```
  */
 export async function set(key: string, value: any, options?: SetItemOptions): Promise<void> {
@@ -109,11 +123,11 @@ export async function clear(): Promise<void> {
 
 /**
  * Gets statistics about the cache
- * @returns Cache statistics including the number of items
+ * @returns Cache statistics including the number of active and total items
  * @example
  * ```typescript
  * const stats = await cache.stats();
- * console.log(`Cache has ${cacheStats.totalSize} items (${cacheStats.activeSize} active)`);
+ * console.log(`Cache has ${stats.totalSize} items (${stats.activeSize} active)`);
  * ```
  */
 export async function stats(): Promise<CacheStats> {
