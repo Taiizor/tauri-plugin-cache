@@ -79,7 +79,7 @@ fn main() {
 ### JavaScript/TypeScript Example
 
 ```typescript
-import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache-api';
+import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache';
 
 // Store a value with TTL
 await set('user', { name: 'John', age: 30 }, { ttl: 60 }); // Expires in 60 seconds
