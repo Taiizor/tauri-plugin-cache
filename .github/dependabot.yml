@@ -70,7 +70,7 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-      day: "first-monday" 
+      day: "monday" 
       time: "09:00"
       timezone: "Europe/Istanbul"
     open-pull-requests-limit: 5
