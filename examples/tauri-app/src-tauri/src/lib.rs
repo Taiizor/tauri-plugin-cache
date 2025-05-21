@@ -7,8 +7,8 @@ fn greet(name: &str) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let cache_config = tauri_plugin_cache::CacheConfig {
-        cache_dir: Some("/custom/cache/path".into()),
-        cache_file_name: Some("my_app_cache.json".into()),
+        cache_dir: Some("my_app_cache".into()),
+        cache_file_name: Some("cache_data.json".into()),
         cleanup_interval: Some(120),
     };
     

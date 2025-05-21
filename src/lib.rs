@@ -72,11 +72,31 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
       // Provide the config manually to the desktop implementation
       #[cfg(desktop)]
       let cache = {
+        // Always start from app's cache directory
+        let base_cache_dir = app.path().app_cache_dir()
+          .map_err(|e| crate::Error::Cache(format!("Failed to get app cache directory: {}", e)))?;
+        
+        // If custom subdirectory is specified, append it to the app cache directory path
         let cache_dir = if let Some(custom_dir) = config_clone.cache_dir.as_deref() {
-          std::path::PathBuf::from(custom_dir)
+          let custom_path = std::path::PathBuf::from(custom_dir);
+          if custom_path.is_absolute() {
+            // Instead of absolute path, take only the last component
+            let path_components: Vec<_> = custom_path
+              .components()
+              .filter(|c| !c.as_os_str().is_empty())
+              .collect();
+            
+            if let Some(last_component) = path_components.last() {
+              base_cache_dir.join(last_component.as_os_str())
+            } else {
+              base_cache_dir
+            }
+          } else {
+            // Add as a relative path
+            base_cache_dir.join(custom_dir)
+          }
         } else {
-          app.path().app_cache_dir()
-            .map_err(|e| crate::Error::Cache(format!("Failed to get app cache directory: {}", e)))?
+          base_cache_dir
         };
         
         // Create the cache directory if it doesn't exist
@@ -92,11 +112,31 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
       
       #[cfg(mobile)]
       let cache = {
+        // Always start from app's cache directory
+        let base_cache_dir = app.path().app_cache_dir()
+          .map_err(|e| crate::Error::Cache(format!("Failed to get app cache directory: {}", e)))?;
+        
+        // If custom subdirectory is specified, append it to the app cache directory path
         let cache_dir = if let Some(custom_dir) = config_clone.cache_dir.as_deref() {
-          std::path::PathBuf::from(custom_dir)
+          let custom_path = std::path::PathBuf::from(custom_dir);
+          if custom_path.is_absolute() {
+            // Instead of absolute path, take only the last component
+            let path_components: Vec<_> = custom_path
+              .components()
+              .filter(|c| !c.as_os_str().is_empty())
+              .collect();
+            
+            if let Some(last_component) = path_components.last() {
+              base_cache_dir.join(last_component.as_os_str())
+            } else {
+              base_cache_dir
+            }
+          } else {
+            // Add as a relative path
+            base_cache_dir.join(custom_dir)
+          }
         } else {
-          app.path().app_cache_dir()
-            .map_err(|e| crate::Error::Cache(format!("Failed to get app cache directory: {}", e)))?
+          base_cache_dir
         };
         
         // Create the cache directory if it doesn't exist

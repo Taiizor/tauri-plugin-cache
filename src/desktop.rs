@@ -25,12 +25,32 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
   // Try to get configuration from the plugin API
   let config = CacheConfig::default();
   
-  // Determine the cache directory
-  let cache_dir = if let Some(custom_dir) = config.cache_dir {
-    PathBuf::from(custom_dir)
+  // Determine the cache directory - always start from app's cache directory
+  let base_cache_dir = app.path().app_cache_dir()
+    .map_err(|e| Error::Cache(format!("Failed to get app cache directory: {}", e)))?;
+  
+  // If custom subdirectory is specified, append it to the app cache directory path
+  let cache_dir = if let Some(custom_dir) = &config.cache_dir {
+    // If an absolute path is specified, we can show a warning but still place it inside app_cache_dir
+    let custom_path = PathBuf::from(custom_dir);
+    if custom_path.is_absolute() {
+      // Instead of absolute path, just take the last part
+      let path_components: Vec<_> = custom_path
+        .components()
+        .filter(|c| !c.as_os_str().is_empty())
+        .collect();
+      
+      if let Some(last_component) = path_components.last() {
+        base_cache_dir.join(last_component.as_os_str())
+      } else {
+        base_cache_dir
+      }
+    } else {
+      // Add as a relative path
+      base_cache_dir.join(custom_dir)
+    }
   } else {
-    app.path().app_cache_dir()
-      .map_err(|e| Error::Cache(format!("Failed to get app cache directory: {}", e)))?
+    base_cache_dir
   };
   
   // Create the cache directory if it doesn't exist

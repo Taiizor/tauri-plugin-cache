@@ -53,9 +53,9 @@ fn main() {
 // Or with custom configuration
 fn main() {
     let cache_config = tauri_plugin_cache::CacheConfig {
-        cache_dir: Some("/custom/cache/path".into()),        // Custom cache directory
-        cache_file_name: Some("my_app_cache.json".into()),   // Custom cache file name
-        cleanup_interval: Some(120),                         // Clean expired items every 120 seconds
+        cache_dir: Some("my_app_cache".into()),           // Custom subdirectory within app's cache directory
+        cache_file_name: Some("cache_data.json".into()),  // Custom cache file name
+        cleanup_interval: Some(120),                      // Clean expired items every 120 seconds
     };
     
     tauri::Builder::default()
@@ -64,6 +64,8 @@ fn main() {
         .expect("error while running tauri application");
 }
 ```
+
+> **Note:** When specifying `cache_dir`, it's recommended to use relative paths instead of absolute paths. The plugin will create this directory inside the app's default cache directory location. If an absolute path is provided, only the last component of the path will be used as a subdirectory name within the app's cache directory.
 
 ## Usage
 
