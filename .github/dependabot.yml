@@ -1,0 +1,81 @@
+version: 2
+updates:
+  # Rust dependencies (Cargo)
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "rust"
+    commit-message:
+      prefix: "cargo"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    groups:
+      tauri-ecosystem:
+        patterns:
+          - "tauri*"
+        update-types:
+          - "minor"
+          - "patch"
+      serde-ecosystem:
+        patterns:
+          - "serde*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "tauri"
+        update-types: ["version-update:semver-major"]
+
+  # NPM dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+    versioning-strategy: "auto"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "npm"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    groups:
+      tauri-js-bindings:
+        patterns:
+          - "@tauri-apps/*"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "first-monday" 
+      time: "09:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "github-actions"
