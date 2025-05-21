@@ -105,10 +105,12 @@
     <button on:click={getStats}>Stats</button>
   </div>
   
-  <div class="response">
-    <h3>Response:</h3>
-    <div class="response-content">{@html response}</div>
-  </div>
+  {#if response}
+    <div class="response">
+        <h3>Response:</h3>
+        <div class="response-content">{@html response}</div>
+    </div>
+  {/if}
 </div>
 
 <style>
