@@ -1,6 +1,6 @@
 # Tauri Plugin Cache
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Taiizor/tauri-plugin-cache/blob/develop/LICENSE)
 
 A Tauri v2 plugin for caching data in memory with optional time-to-live (TTL) functionality. This plugin allows your Tauri application to store and retrieve data with expiration management.
 
@@ -176,7 +176,7 @@ Gets cache statistics.
 - Returns: An object with statistics about the cache
   - `size`: Number of items in the cache
 
-## Mobile Support
+## Platform Compatibility
 
 This plugin supports both desktop and mobile platforms:
 
@@ -185,4 +185,4 @@ This plugin supports both desktop and mobile platforms:
 
 ## License
 
-This project is released under the MIT License.
+This project is released under the [MIT License](https://github.com/Taiizor/tauri-plugin-cache/blob/develop/LICENSE).
