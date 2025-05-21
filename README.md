@@ -23,7 +23,14 @@ An advanced, versatile, and performance-focused disk caching solution for Tauri 
 
 ### Rust Dependencies
 
-Add this plugin as a dependency in your project's `Cargo.toml` file:
+Add this plugin to your project using one of these methods:
+
+```bash
+# Using cargo add (recommended)
+cargo add tauri-plugin-cache
+```
+
+Or manually add to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
@@ -36,6 +43,8 @@ tauri-plugin-cache = "0.1.0"
 Add the plugin API package to your project:
 
 ```bash
+pnpm install tauri-plugin-cache
+# or
 npm install tauri-plugin-cache
 # or
 yarn add tauri-plugin-cache
