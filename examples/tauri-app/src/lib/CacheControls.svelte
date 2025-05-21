@@ -85,9 +85,14 @@
     <input id="ttl" bind:value={ttl} type="number" min="0" />
   </div>
   
-  <div class="input-group checkbox-group">
-    <label for="compress">Compress data:</label>
-    <input id="compress" type="checkbox" bind:checked={compress} />
+  <div class="input-group toggle-group">
+    <div class="toggle-label-container">
+      <label for="compress">Compress data:</label>
+      <div class="toggle-wrapper">
+        <input id="compress" type="checkbox" class="toggle-input" bind:checked={compress} />
+        <label for="compress" class="toggle-label"></label>
+      </div>
+    </div>
     <div class="tooltip">Compression is recommended for large text data to save disk space</div>
   </div>
   
@@ -121,6 +126,10 @@
     --surface-alt: #f5f5f5;
     --console-bg: #0e0b0b;
     --console-text: #f1f1f1;
+    --toggle-off: #ccc;
+    --toggle-on: #536dfe;
+    --toggle-on-shadow: rgba(83, 109, 254, 0.5);
+    --toggle-off-shadow: rgba(0, 0, 0, 0.1);
   }
 
   /* Dark mode support */
@@ -138,6 +147,10 @@
       --surface-alt: #2d2d2d;
       --console-bg: #10192f;
       --console-text: #f1f1f1;
+      --toggle-off: #555;
+      --toggle-on: #536dfe;
+      --toggle-on-shadow: rgba(83, 109, 254, 0.5);
+      --toggle-off-shadow: rgba(0, 0, 0, 0.3);
     }
   }
 
@@ -161,7 +174,7 @@
     align-items: center;
   }
 
-  .input-group label {
+  .input-group > label {
     width: 120px;
     font-weight: bold;
     color: var(--text);
@@ -176,14 +189,75 @@
     color: var(--text);
   }
   
-  .checkbox-group {
-    position: relative;
+  /* Modern toggle switch */
+  .toggle-group {
+    flex-direction: column;
+    align-items: flex-start;
   }
   
-  .checkbox-group input[type="checkbox"] {
-    flex: initial;
-    width: auto;
-    margin-right: 10px;
+  .toggle-label-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    width: 100%;
+  }
+  
+  .toggle-label-container > label {
+    width: 120px;
+    font-weight: bold;
+    color: var(--text);
+  }
+  
+  .toggle-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+  }
+  
+  .toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .toggle-label {
+    display: block;
+    position: relative;
+    width: 50px;
+    height: 24px;
+    background-color: var(--toggle-off);
+    border-radius: 24px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 1px 3px var(--toggle-off-shadow);
+  }
+  
+  .toggle-label:before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s, background-color 0.3s;
+  }
+  
+  .toggle-input:checked + .toggle-label {
+    background-color: var(--toggle-on);
+    box-shadow: 0 1px 5px var(--toggle-on-shadow);
+  }
+  
+  .toggle-input:checked + .toggle-label:before {
+    transform: translateX(26px);
+  }
+  
+  .toggle-input:focus + .toggle-label {
+    box-shadow: 0 0 0 2px var(--toggle-on-shadow);
   }
   
   .input-group textarea {
@@ -195,7 +269,7 @@
   .tooltip {
     font-size: 0.8em;
     color: var(--text-light);
-    margin-left: 10px;
+    margin-left: 120px;
     font-style: italic;
   }
   
