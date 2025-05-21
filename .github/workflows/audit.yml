@@ -20,6 +20,7 @@ on:
 
 permissions:
   issues: write
+  actions: write
   packages: read
   contents: write
   pull-requests: write
