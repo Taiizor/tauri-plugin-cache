@@ -25,8 +25,16 @@ concurrency:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    action-input:
+          input: token
+          is-default: false
+    permissions:
+          issues: write
+          issues-reason: to create issues
+          checks: write
+          checks-reason: to create check
     steps:
       - uses: actions/checkout@v4
-      - uses: rustsec/audit-check@v2.0.0
+      - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
