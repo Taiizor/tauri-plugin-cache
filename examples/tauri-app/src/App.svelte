@@ -1,5 +1,6 @@
 <script>
   import Greet from './lib/Greet.svelte'
+  import CompressTest from './lib/CompressTest.svelte'
   import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache-api'
 
 	let response = ''
@@ -23,9 +24,9 @@
 			.catch(err => updateResponse(`Error: ${err.toString()}`))
 	}
 
-	// Büyük veri oluşturma fonksiyonu - sıkıştırmanın etkisini göstermek için
+	// Function to generate large data - to demonstrate the effect of compression
 	function generateLargeData() {
-		// 1000 elemanlı bir dizi oluştur
+		// Create an array with 1000 elements
 		const largeArray = Array.from({ length: 1000 }, (_, i) => ({
 			id: i,
 			name: `Item ${i}`,
@@ -126,9 +127,52 @@
     </div>
   </div>
 
+  <!-- Add the compression test component -->
+  <CompressTest />
+
 </main>
 
 <style>
+  /* Theme variables for light/dark mode support */
+  :root {
+    --border-color: #ddd;
+    --background: white;
+    --background-alt: #f5f5f5;
+    --primary-color: #2c2c54;
+    --primary-hover: #474787;
+    --disabled-color: #666;
+    --button-text: white;
+    --text: #333;
+    --text-light: #666;
+    --surface-alt: #f5f5f5;
+    --console-bg: #0e0b0b;
+    --console-text: #f1f1f1;
+  }
+
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --border-color: #444;
+      --background: #1a1a1a;
+      --background-alt: #2d2d2d;
+      --primary-color: #536dfe;
+      --primary-hover: #7986cb;
+      --disabled-color: #454545;
+      --button-text: white;
+      --text: #eee;
+      --text-light: #aaa;
+      --surface-alt: #2d2d2d;
+      --console-bg: #10192f;
+      --console-text: #f1f1f1;
+    }
+  }
+
+  /* Apply theme variables to styles */
+  :global(body) {
+    background-color: var(--background);
+    color: var(--text);
+  }
+
   .logo.vite:hover {
     filter: drop-shadow(0 0 2em #747bff);
   }
@@ -138,10 +182,11 @@
   }
 
   .cache-controls {
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     padding: 20px;
     border-radius: 8px;
     margin-top: 20px;
+    background-color: var(--background-alt);
   }
 
   .input-group {
@@ -153,13 +198,16 @@
   .input-group label {
     width: 120px;
     font-weight: bold;
+    color: var(--text);
   }
 
   .input-group input, .input-group textarea {
     flex: 1;
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
+    background-color: var(--background);
+    color: var(--text);
   }
   
   .checkbox-group {
@@ -180,7 +228,7 @@
   
   .tooltip {
     font-size: 0.8em;
-    color: #666;
+    color: var(--text-light);
     margin-left: 10px;
     font-style: italic;
   }
@@ -200,8 +248,8 @@
 
   button {
     padding: 8px 16px;
-    background-color: #2c2c54;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--button-text);
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -209,7 +257,7 @@
   }
 
   button:hover {
-    background-color: #474787;
+    background-color: var(--primary-hover);
   }
 
   .response {
@@ -217,13 +265,17 @@
   }
 
   .response-content {
-    background-color: #0e0b0b;
+    background-color: var(--console-bg);
     padding: 10px;
     border-radius: 4px;
     max-height: 200px;
     overflow-y: auto;
     white-space: pre-wrap;
     font-family: monospace;
-    color: #f1f1f1;
+    color: var(--console-text);
+  }
+
+  h1, h2, h3 {
+    color: var(--text);
   }
 </style>
