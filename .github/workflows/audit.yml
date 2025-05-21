@@ -20,8 +20,8 @@ on:
 
 permissions:
   issues: write
-  contents: read
   packages: read
+  contents: write
   pull-requests: write
   security-events: write
 
