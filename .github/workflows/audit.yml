@@ -7,16 +7,16 @@ on:
     branches:
       - develop
     paths:
-      - ".github/workflows/audit.yml"
       - "**/Cargo.lock"
       - "**/Cargo.toml"
+      - ".github/workflows/audit.yml"
   pull_request:
     branches:
       - develop
     paths:
-      - ".github/workflows/audit.yml"
       - "**/Cargo.lock"
       - "**/Cargo.toml"
+      - ".github/workflows/audit.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
