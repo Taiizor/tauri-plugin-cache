@@ -2,7 +2,7 @@
   "name": "tauri-plugin-cache-api",
   "version": "0.1.0",
   "author": "Taiizor",
-  "description": "A Tauri plugin for caching data on disk with optional TTL",
+  "description": "Comprehensive disk and memory caching solution for Tauri applications. Features dynamic TTL management, intelligent data compression, automatic cleanup, and statistics monitoring. Delivers high-performance data access, optimized storage, and improved user experience.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -11,9 +11,18 @@
   "keywords": [
     "tauri",
     "plugin",
+    "cache",
     "disk",
     "memory",
-    "ttl"
+    "ttl",
+    "compression",
+    "storage",
+    "expiration",
+    "optimization",
+    "cross-platform",
+    "auto-cleanup",
+    "statistics",
+    "performance"
   ],
   "type": "module",
   "types": "./dist-js/index.d.ts",

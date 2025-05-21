@@ -2,7 +2,7 @@
 name = "tauri-plugin-cache"
 version = "0.1.0"
 authors = ["Taiizor <taiizor@vegalya.com>"]
-description = "A Tauri plugin for caching data on disk with optional TTL"
+description = "Advanced disk caching solution for Tauri applications. Provides compression, TTL management, memory caching, automatic cleanup, and cross-platform support. Enhances data access performance and storage optimization."
 edition = "2021"
 rust-version = "1.77.2"
 exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]

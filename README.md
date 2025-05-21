@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Taiizor/tauri-plugin-cache/blob/develop/LICENSE)
 
-A Tauri plugin for caching data on disk with optional time-to-live (TTL) functionality. This plugin allows your Tauri application to store and retrieve data with expiration management.
+An advanced, versatile, and performance-focused disk caching solution for Tauri applications. This plugin features powerful compression support, memory caching layer, configurable time-to-live (TTL) management, automatic cleanup, and cross-platform compatibility. It enables persistent storage of data on disk for fast access and optimizes application performance through intelligent caching strategies. Working seamlessly on both desktop and mobile platforms, it significantly enhances the data management capabilities of your Tauri applications.
 
 ## Features
 
