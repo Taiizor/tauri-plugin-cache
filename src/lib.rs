@@ -21,6 +21,9 @@ use desktop::Cache;
 #[cfg(mobile)]
 use mobile::Cache;
 
+#[cfg(desktop)]
+pub use desktop::CompressionConfig;
+
 /// Extensions to [`tauri::App`], [`tauri::AppHandle`] and [`tauri::Window`] to access the cache APIs.
 pub trait CacheExt<R: Runtime> {
     fn cache(&self) -> &Cache<R>;
@@ -97,17 +100,21 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
                     .unwrap_or("tauri_cache.json");
                 let cache_file_path = cache_dir.join(cache_file_name);
 
-                // Get the default compression setting
+                // Get the default compression settings
                 let default_compression = config_clone.default_compression.unwrap_or(false);
+                let compression_level = config_clone.compression_level;
+                let compression_threshold = config_clone.compression_threshold;
 
-                // Initialize the cache with cleanup interval and default compression
+                // Initialize the cache with cleanup interval
                 let mut cache = desktop::init_with_config(
                     app,
                     api,
                     cache_file_path,
                     config_clone.cleanup_interval.unwrap_or(60),
                 )?;
-                cache.init_with_config(default_compression);
+                
+                // Initialize with compression settings
+                cache.init_with_config(default_compression, compression_level, compression_threshold);
                 cache
             };
 

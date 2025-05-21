@@ -123,6 +123,10 @@ pub struct CacheConfig {
     pub cleanup_interval: Option<u64>,
     /// Default compression setting for new items
     pub default_compression: Option<bool>,
+    /// Compression level (0-9, where 0 is no compression and 9 is max compression)
+    pub compression_level: Option<u32>,
+    /// Threshold in bytes after which compression is applied
+    pub compression_threshold: Option<usize>,
 }
 
 impl Default for CacheConfig {
@@ -132,6 +136,8 @@ impl Default for CacheConfig {
             cache_file_name: None,
             cleanup_interval: Some(60),       // Default 60 seconds
             default_compression: Some(false), // Default no compression
+            compression_level: Some(6),       // Default medium compression level
+            compression_threshold: Some(1024), // Default 1KB threshold
         }
     }
 }

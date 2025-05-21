@@ -11,6 +11,8 @@ pub fn run() {
         cache_file_name: Some("cache_data.json".into()),
         cleanup_interval: Some(120),
         default_compression: Some(true),
+        compression_level: Some(9),
+        compression_threshold: Some(4096),
     };
     
     tauri::Builder::default()

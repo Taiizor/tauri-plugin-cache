@@ -10,11 +10,14 @@ A Tauri plugin for caching data on disk with optional time-to-live (TTL) functio
 - **Customizable Storage**: Configure where cache files are stored
 - **Optional TTL**: Set expiration times for cache items
 - **Data Compression**: Enable compression for large data items
+- **Smart Compression**: Configurable compression levels and thresholds
+- **Memory Caching**: In-memory caching layer for improved performance
 - **Configurable Cache Location**: Customize where cache files are stored
 - **Cross-Platform**: Works on desktop and mobile
 - **Type Safety**: Full TypeScript typings
 - **Automatic Cleanup**: Background task to remove expired items
 - **Cache Statistics**: Monitor cache usage
+- **Performance Optimized**: Buffered I/O and chunked processing for large datasets
 
 ## Installation
 
@@ -58,6 +61,8 @@ fn main() {
         cache_file_name: Some("cache_data.json".into()),  // Custom cache file name
         cleanup_interval: Some(120),                      // Clean expired items every 120 seconds
         default_compression: Some(true),                  // Enable compression by default
+        compression_level: Some(7),                       // Higher compression level (0-9, where 9 is max)
+        compression_threshold: Some(4096),                // Only compress items larger than 4KB
     };
     
     tauri::Builder::default()
