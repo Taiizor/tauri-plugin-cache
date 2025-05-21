@@ -76,6 +76,7 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
 }
 
 /// Access to the cache APIs.
+#[allow(dead_code)]
 pub struct Cache<R: Runtime> {
   app: AppHandle<R>,
   cache_file_path: PathBuf,
