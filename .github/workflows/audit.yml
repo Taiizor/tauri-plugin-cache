@@ -21,7 +21,9 @@ on:
 permissions:
   issues: write
   contents: read
+  packages: read
   pull-requests: write
+  security-events: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
