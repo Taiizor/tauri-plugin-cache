@@ -91,7 +91,7 @@ impl<R: Runtime> Cache<R> {
                             }
                         })
                         .collect();
-                    
+
                     for key in expired_keys {
                         cache.remove(&key);
                     }
@@ -145,13 +145,13 @@ impl<R: Runtime> Cache<R> {
 
         let file = fs::File::open(path)?;
         let file_size = file.metadata()?.len();
-        
+
         // For large files, use a buffered reader for better performance
         let mut reader = BufReader::with_capacity(
             std::cmp::min(file_size as usize, 128 * 1024), // 128KB buffer or file size
-            file
+            file,
         );
-        
+
         let mut contents = String::with_capacity(file_size as usize);
         reader.read_to_string(&mut contents)?;
 
@@ -168,10 +168,10 @@ impl<R: Runtime> Cache<R> {
     /// Write cache data to file
     fn write_to_file(path: &PathBuf, data: &HashMap<String, CacheEntry>) -> io::Result<()> {
         let file = fs::File::create(path)?;
-        
+
         // Use a buffered writer for better performance
         let mut writer = BufWriter::with_capacity(128 * 1024, file); // 128KB buffer
-        
+
         serde_json::to_writer(&mut writer, data)?;
         writer.flush()?;
         Ok(())
@@ -182,7 +182,7 @@ impl<R: Runtime> Cache<R> {
         // First serialize to JSON string to determine size
         let json_string = serde_json::to_string(value)
             .map_err(|e| Error::Cache(format!("Failed to serialize value: {}", e)))?;
-        
+
         // Check if value is below the compression threshold
         if !self.compression.enabled || json_string.len() < self.compression.threshold {
             // Return a special marker that indicates this value wasn't compressed
@@ -191,63 +191,69 @@ impl<R: Runtime> Cache<R> {
             result.extend_from_slice(json_string.as_bytes());
             return Ok(result);
         }
-        
+
         // Apply compression with the configured level
         let compression_level = Compression::new(self.compression.level);
         let mut encoder = ZlibEncoder::new(Vec::new(), compression_level);
-        
+
         // For large data, write in chunks to avoid memory spikes
         let bytes = json_string.as_bytes();
         const CHUNK_SIZE: usize = 64 * 1024; // 64KB chunks
-        
+
         if bytes.len() > CHUNK_SIZE {
             // Process in chunks for large data
             for chunk in bytes.chunks(CHUNK_SIZE) {
-                encoder.write_all(chunk)
+                encoder
+                    .write_all(chunk)
                     .map_err(|e| Error::Cache(format!("Failed to compress value chunk: {}", e)))?;
             }
         } else {
             // Small data can be written at once
-            encoder.write_all(bytes)
+            encoder
+                .write_all(bytes)
                 .map_err(|e| Error::Cache(format!("Failed to compress value: {}", e)))?;
         }
 
         // Add marker for compressed data
-        let mut compressed = encoder.finish()
+        let mut compressed = encoder
+            .finish()
             .map_err(|e| Error::Cache(format!("Failed to finish compression: {}", e)))?;
-        
+
         // Prepend marker (1 = compressed)
         let mut result = Vec::with_capacity(compressed.len() + 1);
         result.push(1); // Marker for compressed data
         result.append(&mut compressed);
-        
+
         Ok(result)
     }
 
     /// Decompress a compressed value back to JSON
     fn decompress_value(&self, data: &[u8]) -> crate::Result<serde_json::Value> {
         if data.is_empty() {
-            return Err(Error::Cache("Empty data provided for decompression".to_string()));
+            return Err(Error::Cache(
+                "Empty data provided for decompression".to_string(),
+            ));
         }
-        
+
         // Check the compression marker
         let is_compressed = data[0] == 1;
         let actual_data = &data[1..]; // Skip the marker byte
-        
+
         if !is_compressed {
             // Data wasn't compressed, parse directly
             let string_data = std::str::from_utf8(actual_data)
                 .map_err(|e| Error::Cache(format!("Failed to decode uncompressed data: {}", e)))?;
-                
+
             return serde_json::from_str(string_data)
                 .map_err(|e| Error::Cache(format!("Failed to deserialize value: {}", e)));
         }
-        
+
         // Data was compressed, decompress it
         let mut decoder = ZlibDecoder::new(actual_data);
         let mut decompressed_data = String::new();
-        
-        decoder.read_to_string(&mut decompressed_data)
+
+        decoder
+            .read_to_string(&mut decompressed_data)
             .map_err(|e| Error::Cache(format!("Failed to decompress value: {}", e)))?;
 
         serde_json::from_str(&decompressed_data)
@@ -335,7 +341,7 @@ impl<R: Runtime> Cache<R> {
                         .duration_since(UNIX_EPOCH)
                         .unwrap()
                         .as_secs();
-                    
+
                     if *expires < now {
                         // Item has expired, remove from in-memory cache
                         drop(cache); // Release the lock before modifying
@@ -385,13 +391,13 @@ impl<R: Runtime> Cache<R> {
 
                     // Decompress
                     let value = self.decompress_value(&compressed_data)?;
-                    
+
                     // Cache the decompressed value in memory for future use
                     {
                         let mut cache = self.value_cache.lock().unwrap();
                         cache.insert(key.to_string(), (value.clone(), entry.expires_at));
                     }
-                    
+
                     return Ok(Some(value));
                 } else {
                     return Err(Error::Cache(
@@ -405,7 +411,7 @@ impl<R: Runtime> Cache<R> {
                 let mut cache = self.value_cache.lock().unwrap();
                 cache.insert(key.to_string(), (entry.value.clone(), entry.expires_at));
             }
-            
+
             // Return the value as is (not compressed)
             Ok(Some(entry.value.clone()))
         } else {
@@ -425,7 +431,7 @@ impl<R: Runtime> Cache<R> {
                         .duration_since(UNIX_EPOCH)
                         .unwrap()
                         .as_secs();
-                    
+
                     if *expires < now {
                         // Item has expired
                         drop(cache); // Release the lock before modifying
@@ -468,7 +474,7 @@ impl<R: Runtime> Cache<R> {
                 let mut cache = self.value_cache.lock().unwrap();
                 cache.insert(key.to_string(), (entry.value.clone(), entry.expires_at));
             }
-            
+
             Ok(BooleanResponse { value: true })
         } else {
             Ok(BooleanResponse { value: false })
@@ -482,7 +488,7 @@ impl<R: Runtime> Cache<R> {
             let mut cache = self.value_cache.lock().unwrap();
             cache.remove(key);
         }
-        
+
         // Acquire lock for file operations
         let _guard = self.file_mutex.lock().unwrap();
 
@@ -507,7 +513,7 @@ impl<R: Runtime> Cache<R> {
             let mut cache = self.value_cache.lock().unwrap();
             cache.clear();
         }
-        
+
         // Acquire lock for file operations
         let _guard = self.file_mutex.lock().unwrap();
 
@@ -546,13 +552,16 @@ impl<R: Runtime> Cache<R> {
             .as_secs();
 
         // Count only non-expired items
-        let active_count = data.iter().filter(|(_, entry)| {
-            if let Some(expires_at) = entry.expires_at {
-                expires_at > now
-            } else {
-                true // Items without expiration are always active
-            }
-        }).count();
+        let active_count = data
+            .iter()
+            .filter(|(_, entry)| {
+                if let Some(expires_at) = entry.expires_at {
+                    expires_at > now
+                } else {
+                    true // Items without expiration are always active
+                }
+            })
+            .count();
 
         Ok(active_count)
     }
@@ -561,9 +570,14 @@ impl<R: Runtime> Cache<R> {
     pub fn get_cache_file_path(&self) -> PathBuf {
         self.cache_file_path.clone()
     }
-    
+
     /// Configure the cache with compression settings
-    pub fn init_with_config(&mut self, default_compression: bool, compression_level: Option<u32>, threshold: Option<usize>) {
+    pub fn init_with_config(
+        &mut self,
+        default_compression: bool,
+        compression_level: Option<u32>,
+        threshold: Option<usize>,
+    ) {
         self.compression = CompressionConfig {
             enabled: default_compression,
             level: compression_level.unwrap_or(6),

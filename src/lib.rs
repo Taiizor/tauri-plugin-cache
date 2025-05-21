@@ -109,9 +109,13 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
                     cache_file_path,
                     config_clone.cleanup_interval.unwrap_or(60),
                 )?;
-                
+
                 // Initialize with compression settings
-                cache.init_with_config(default_compression, compression_level, compression_threshold);
+                cache.init_with_config(
+                    default_compression,
+                    compression_level,
+                    compression_threshold,
+                );
                 cache
             };
 

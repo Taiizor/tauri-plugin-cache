@@ -129,7 +129,7 @@ impl Default for CompressionConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            level: 6,  // Default compression level
+            level: 6, // Default compression level
             threshold: COMPRESSION_THRESHOLD,
         }
     }
@@ -158,9 +158,9 @@ impl Default for CacheConfig {
         Self {
             cache_dir: None,
             cache_file_name: None,
-            cleanup_interval: Some(60),       // Default 60 seconds
-            default_compression: Some(false), // Default no compression
-            compression_level: Some(6),       // Default medium compression level
+            cleanup_interval: Some(60),        // Default 60 seconds
+            default_compression: Some(false),  // Default no compression
+            compression_level: Some(6),        // Default medium compression level
             compression_threshold: Some(1024), // Default 1KB threshold
         }
     }
