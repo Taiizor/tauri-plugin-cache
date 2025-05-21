@@ -1,20 +1,20 @@
-name: Check
+name: Clippy
 
 on:
   push:
     branches:
       - develop
     paths:
-      - ".github/workflows/check.yml"
       - "**/*.rs"
       - "**/Cargo.toml"
+      - ".github/workflows/clippy.yml"
   pull_request:
     branches:
       - develop
     paths:
-      - ".github/workflows/check.yml"
       - "**/*.rs"
       - "**/Cargo.toml"
+      - ".github/workflows/clippy.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -50,4 +50,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y webkit2gtk-4.1
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --all-targets --all-features -- -D warnings
+        env:
+          RUSTFLAGS: "-D warnings"
+        run: cargo clippy --all-targets --all-features
