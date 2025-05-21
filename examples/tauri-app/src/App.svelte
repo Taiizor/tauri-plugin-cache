@@ -23,7 +23,7 @@
     <Greet />
   </div>
 
-<!-- -->
+  <!-- Add the cache controls component -->
   <CacheControls />
 
   <!-- Add the compression test component -->
