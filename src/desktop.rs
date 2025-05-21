@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
@@ -205,7 +206,7 @@ impl<R: Runtime> Cache<R> {
             // Compress the value
             let compressed_data = self.compress_value(&value_json)?;
             // Store the compressed data as a base64 string
-            let compressed_str = base64::encode(&compressed_data);
+            let compressed_str = STANDARD.encode(&compressed_data);
             CacheEntry {
                 value: serde_json::Value::String(compressed_str),
                 expires_at,
@@ -257,7 +258,8 @@ impl<R: Runtime> Cache<R> {
                 // Value is compressed - need to decompress
                 if let serde_json::Value::String(compressed_str) = &entry.value {
                     // Decode base64
-                    let compressed_data = base64::decode(compressed_str)
+                    let compressed_data = STANDARD
+                        .decode(compressed_str)
                         .map_err(|e| Error::Cache(format!("Failed to decode base64: {}", e)))?;
 
                     // Decompress
