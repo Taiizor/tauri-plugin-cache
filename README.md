@@ -23,7 +23,7 @@ Add this plugin as a dependency in your project's `Cargo.toml` file:
 
 ```toml
 [dependencies]
-tauri = { version = "2.0.0" }
+tauri = { version = "2.5.1" }
 tauri-plugin-cache = "0.1.0"
 ```
 
