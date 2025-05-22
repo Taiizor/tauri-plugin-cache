@@ -1,6 +1,6 @@
 [package]
 name = "tauri-plugin-cache"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Taiizor <taiizor@vegalya.com>"]
 description = "Advanced disk caching solution for Tauri applications. Provides compression, TTL management, memory caching, automatic cleanup, and cross-platform support. Enhances data access performance and storage optimization."
 edition = "2021"

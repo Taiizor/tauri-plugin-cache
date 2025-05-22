@@ -59,7 +59,7 @@ Or manually add to your `Cargo.toml` file:
 ```toml
 [dependencies]
 tauri = { version = "2.5.1" }
-tauri-plugin-cache = "0.1.2"
+tauri-plugin-cache = "0.1.3"
 ```
 
 #### JavaScript/TypeScript API
