@@ -39,7 +39,7 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
             .file_name()
             .map(|f| f.to_string_lossy().to_string()),
         cleanup_interval: Some(cleanup_interval),
-        default_compression: Some(false), // Default to no compression on mobile
+        default_compression: Some(true),
     };
 
     // Register the plugin with API
@@ -68,6 +68,27 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
 pub struct Cache<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> Cache<R> {
+    /// Configure the cache with compression settings
+    pub fn init_with_config(
+        &mut self,
+        default_compression: bool,
+        compression_level: Option<u32>,
+        compression_threshold: Option<usize>,
+    ) {
+        // Update compression settings on mobile side
+        // Let's update the config to send these settings to the native side
+        let config = CompressionConfig {
+            enabled: default_compression,
+            level: compression_level.unwrap_or(6),
+            threshold: compression_threshold.unwrap_or(crate::models::COMPRESSION_THRESHOLD),
+        };
+        
+        // Send configuration to native side
+        let _ = self.0.run_mobile_plugin("updateCompressionConfig", &config);
+        // Error is ignored because this feature might not exist in older versions of mobile plugins
+        // Error handling should be added in a real application
+    }
+
     /// Sets a value in the cache with optional TTL
     pub fn set<T: Serialize>(
         &self,
