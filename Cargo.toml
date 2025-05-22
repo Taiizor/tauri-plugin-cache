@@ -12,7 +12,7 @@ repository = "https://github.com/Taiizor/tauri-plugin-cache"
 readme = "README.md"
 
 [features]
-default = ["desktop"]
+default = ["desktop", "mobile"]
 desktop = []
 mobile = []
 
