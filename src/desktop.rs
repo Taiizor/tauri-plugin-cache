@@ -584,7 +584,7 @@ impl<R: Runtime> Cache<R> {
         threshold: Option<usize>,
     ) {
         self.compression = CompressionConfig {
-            enabled: default_compression.unwrap_or(true),
+            enabled: default_compression,
             level: compression_level.unwrap_or(6),
             threshold: threshold.unwrap_or(COMPRESSION_THRESHOLD),
         };
