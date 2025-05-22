@@ -203,8 +203,8 @@ if (exists) {
 await remove('user');
 
 // Get cache statistics
-const stats = await stats();
-console.log(`Cache has ${stats.totalSize} items (${stats.activeSize} active)`);
+const statistics = await stats();
+console.log(`Cache has ${statistics.totalSize} items (${statistics.activeSize} active)`);
 
 // Clear all values
 await clear();
