@@ -107,6 +107,64 @@ fn main() {
 
 > **Note:** When specifying `cache_dir`, it's recommended to use relative paths instead of absolute paths. The plugin will create this directory inside the app's default cache directory location. If an absolute path is provided, only the last component of the path will be used as a subdirectory name within the app's cache directory.
 
+## Permissions
+
+By default all plugin commands are blocked and cannot be accessed. You must modify the permissions in your `capabilities` configuration to enable these.
+
+See the [Capabilities Overview](https://v2.tauri.app/security/capabilities) for more information.
+
+### Example Capability Configuration
+
+```json
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "cache-access",
+  "description": "Capability to access the cache functionality",
+  "windows": ["main"],
+  "permissions": [
+    "cache:default"
+  ]
+}
+```
+
+Then enable this capability in your `tauri.conf.json`:
+
+```json
+{
+  "app": {
+    "security": {
+      "capabilities": ["cache-access"]
+    }
+  }
+}
+```
+
+### Default Permission
+
+The `cache:default` permission set configures which cache features are exposed by default.
+
+#### Granted Permissions
+This enables all cache operations including setting, getting, and removing cached data.
+
+#### This default permission set includes the following:
+- `cache:allow-set`
+- `cache:allow-get`
+- `cache:allow-has`
+- `cache:allow-remove`
+- `cache:allow-clear`
+- `cache:allow-stats`
+
+### Permission Table
+
+| Identifier | Description |
+| ---------- | ----------- |
+| cache:allow-set | Allows setting data in the cache |
+| cache:allow-get | Allows retrieving data from the cache |
+| cache:allow-has | Allows checking if data exists in the cache |
+| cache:allow-remove | Allows removing data from the cache |
+| cache:allow-clear | Allows clearing all data from the cache |
+| cache:allow-stats | Allows retrieving statistics about the cache |
+
 ## Usage
 
 ### JavaScript/TypeScript Example
