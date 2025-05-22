@@ -159,11 +159,17 @@ This enables all cache operations including setting, getting, and removing cache
 | Identifier | Description |
 | ---------- | ----------- |
 | cache:allow-set | Allows setting data in the cache |
+| cache:deny-set | Denies setting data in the cache |
 | cache:allow-get | Allows retrieving data from the cache |
+| cache:deny-get | Denies retrieving data from the cache |
 | cache:allow-has | Allows checking if data exists in the cache |
+| cache:deny-has | Denies checking if data exists in the cache |
 | cache:allow-remove | Allows removing data from the cache |
+| cache:deny-remove | Denies removing data from the cache |
 | cache:allow-clear | Allows clearing all data from the cache |
+| cache:deny-clear | Denies clearing all data from the cache |
 | cache:allow-stats | Allows retrieving statistics about the cache |
+| cache:deny-stats | Denies retrieving statistics about the cache |
 
 ## Usage
 
