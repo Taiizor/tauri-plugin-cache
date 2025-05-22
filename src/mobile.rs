@@ -82,7 +82,7 @@ impl<R: Runtime> Cache<R> {
             level: compression_level.unwrap_or(6),
             threshold: compression_threshold.unwrap_or(crate::models::COMPRESSION_THRESHOLD),
         };
-        
+
         // Send configuration to native side
         let _ = self.0.run_mobile_plugin("updateCompressionConfig", &config);
         // Error is ignored because this feature might not exist in older versions of mobile plugins
