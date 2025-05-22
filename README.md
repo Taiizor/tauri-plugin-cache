@@ -6,17 +6,17 @@ An advanced, versatile, and performance-focused disk caching solution for Tauri 
 
 ## Features
 
-- **Disk-based Cache**: Persistent data storage and retrieval
-- **Customizable Storage**: Configure where cache files are stored
-- **Optional TTL**: Set expiration times for cache items
-- **Data Compression**: Enable compression for large data items
-- **Smart Compression**: Configurable compression levels and thresholds
-- **Memory Caching**: In-memory caching layer for improved performance
-- **Configurable Cache Location**: Customize where cache files are stored
-- **Cross-Platform**: Works on desktop and mobile
 - **Type Safety**: Full TypeScript typings
-- **Automatic Cleanup**: Background task to remove expired items
 - **Cache Statistics**: Monitor cache usage
+- **Cross-Platform**: Works on desktop and mobile
+- **Optional TTL**: Set expiration times for cache items
+- **Disk-based Cache**: Persistent data storage and retrieval
+- **Data Compression**: Enable compression for large data items
+- **Automatic Cleanup**: Background task to remove expired items
+- **Customizable Storage**: Configure where cache files are stored
+- **Memory Caching**: In-memory caching layer for improved performance
+- **Smart Compression**: Configurable compression levels and thresholds
+- **Configurable Cache Location**: Customize where cache files are stored
 - **Performance Optimized**: Buffered I/O and chunked processing for large datasets
 
 ## Installation
