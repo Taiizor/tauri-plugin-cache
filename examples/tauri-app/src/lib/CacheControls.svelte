@@ -1,5 +1,5 @@
 <script>
-  import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache'
+  import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache-api'
 
 	let response = ''
 	let key = 'test-key'

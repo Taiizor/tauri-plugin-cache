@@ -98,7 +98,7 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
                 let cache_file_path = cache_dir.join(cache_file_name);
 
                 // Get the default compression settings
-                let default_compression = config_clone.default_compression.unwrap_or(false);
+                let default_compression = config_clone.default_compression.unwrap_or(true);
                 let compression_level = config_clone.compression_level;
                 let compression_threshold = config_clone.compression_threshold;
 
@@ -161,12 +161,26 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
                     .unwrap_or("tauri_cache.json");
                 let cache_file_path = cache_dir.join(cache_file_name);
 
-                mobile::init_with_config(
+                // Get the default compression settings
+                let default_compression = config_clone.default_compression.unwrap_or(true);
+                let compression_level = config_clone.compression_level;
+                let compression_threshold = config_clone.compression_threshold;
+
+                // Initialize the cache with cleanup interval
+                let mut cache = mobile::init_with_config(
                     app,
                     api,
                     cache_file_path,
                     config_clone.cleanup_interval.unwrap_or(60),
-                )?
+                )?;
+
+                // Initialize with compression settings
+                cache.init_with_config(
+                    default_compression,
+                    compression_level,
+                    compression_threshold,
+                );
+                cache
             };
 
             app.manage(cache);

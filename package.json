@@ -1,6 +1,6 @@
 {
-  "name": "tauri-plugin-cache",
-  "version": "0.1.1",
+  "name": "tauri-plugin-cache-api",
+  "version": "0.1.3",
   "author": "Taiizor",
   "description": "Comprehensive disk and memory caching solution for Tauri applications. Features dynamic TTL management, intelligent data compression, automatic cleanup, and statistics monitoring. Delivers high-performance data access, optimized storage, and improved user experience.",
   "license": "MIT",

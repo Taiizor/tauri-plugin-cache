@@ -6,27 +6,51 @@ An advanced, versatile, and performance-focused disk caching solution for Tauri 
 
 ## Features
 
-- **Disk-based Cache**: Persistent data storage and retrieval
-- **Customizable Storage**: Configure where cache files are stored
-- **Optional TTL**: Set expiration times for cache items
-- **Data Compression**: Enable compression for large data items
-- **Smart Compression**: Configurable compression levels and thresholds
-- **Memory Caching**: In-memory caching layer for improved performance
-- **Configurable Cache Location**: Customize where cache files are stored
-- **Cross-Platform**: Works on desktop and mobile
 - **Type Safety**: Full TypeScript typings
-- **Automatic Cleanup**: Background task to remove expired items
 - **Cache Statistics**: Monitor cache usage
+- **Cross-Platform**: Works on desktop and mobile
+- **Optional TTL**: Set expiration times for cache items
+- **Disk-based Cache**: Persistent data storage and retrieval
+- **Data Compression**: Enable compression for large data items
+- **Customizable Storage**: Configure where cache files are stored
+- **Automatic Cleanup**: Background task to remove expired items
+- **Smart Compression**: Configurable compression levels and thresholds
+- **Configurable Cache Location**: Customize where cache files are stored
+- **Memory Caching**: In-memory caching layer for improved performance
 - **Performance Optimized**: Buffered I/O and chunked processing for large datasets
 
 ## Installation
 
-### Rust Dependencies
+### Using Tauri CLI (Recommended)
+
+The easiest way to install this plugin is using the Tauri CLI, which automatically adds both Rust and JavaScript dependencies to your project:
+
+```bash
+# Using npm
+npm run tauri add cache
+
+# Using pnpm
+pnpm tauri add cache
+
+# Using yarn
+yarn tauri add cache
+```
+
+This will:
+- Add the `tauri-plugin-cache` crate to your `Cargo.toml`
+- Install the `tauri-plugin-cache-api` npm package
+- Set up the necessary configurations
+
+### Manual Installation
+
+If you prefer to manually install the plugin, you can follow these steps:
+
+#### Rust Dependencies
 
 Add this plugin to your project using one of these methods:
 
 ```bash
-# Using cargo add (recommended)
+# Using cargo add
 cargo add tauri-plugin-cache
 ```
 
@@ -35,19 +59,19 @@ Or manually add to your `Cargo.toml` file:
 ```toml
 [dependencies]
 tauri = { version = "2.5.1" }
-tauri-plugin-cache = "0.1.0"
+tauri-plugin-cache = "0.1.3"
 ```
 
-### JavaScript/TypeScript API
+#### JavaScript/TypeScript API
 
 Add the plugin API package to your project:
 
 ```bash
-pnpm install tauri-plugin-cache
+pnpm install tauri-plugin-cache-api
 # or
-npm install tauri-plugin-cache
+npm install tauri-plugin-cache-api
 # or
-yarn add tauri-plugin-cache
+yarn add tauri-plugin-cache-api
 ```
 
 ## Setup
@@ -83,12 +107,76 @@ fn main() {
 
 > **Note:** When specifying `cache_dir`, it's recommended to use relative paths instead of absolute paths. The plugin will create this directory inside the app's default cache directory location. If an absolute path is provided, only the last component of the path will be used as a subdirectory name within the app's cache directory.
 
+## Permissions
+
+By default all plugin commands are blocked and cannot be accessed. You must modify the permissions in your `capabilities` configuration to enable these.
+
+See the [Capabilities Overview](https://v2.tauri.app/security/capabilities) for more information.
+
+### Example Capability Configuration
+
+```json
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "cache-access",
+  "description": "Capability to access the cache functionality",
+  "windows": ["main"],
+  "permissions": [
+    "cache:default"
+  ]
+}
+```
+
+Then enable this capability in your `tauri.conf.json`:
+
+```json
+{
+  "app": {
+    "security": {
+      "capabilities": ["cache-access"]
+    }
+  }
+}
+```
+
+### Default Permission
+
+The `cache:default` permission set configures which cache features are exposed by default.
+
+#### Granted Permissions
+This enables all cache operations including setting, getting, and removing cached data.
+
+#### This default permission set includes the following:
+- `cache:allow-set`
+- `cache:allow-get`
+- `cache:allow-has`
+- `cache:allow-remove`
+- `cache:allow-clear`
+- `cache:allow-stats`
+
+### Permission Table
+
+| Identifier | Description |
+| ---------- | ----------- |
+| cache:allow-set | Allows setting data in the cache |
+| cache:deny-set | Denies setting data in the cache |
+| cache:allow-get | Allows retrieving data from the cache |
+| cache:deny-get | Denies retrieving data from the cache |
+| cache:allow-has | Allows checking if data exists in the cache |
+| cache:deny-has | Denies checking if data exists in the cache |
+| cache:allow-remove | Allows removing data from the cache |
+| cache:deny-remove | Denies removing data from the cache |
+| cache:allow-clear | Allows clearing all data from the cache |
+| cache:deny-clear | Denies clearing all data from the cache |
+| cache:allow-stats | Allows retrieving statistics about the cache |
+| cache:deny-stats | Denies retrieving statistics about the cache |
+
 ## Usage
 
 ### JavaScript/TypeScript Example
 
 ```typescript
-import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache';
+import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache-api';
 
 // Store a value with TTL
 await set('user', { name: 'John', age: 30 }, { ttl: 60 }); // Expires in 60 seconds
