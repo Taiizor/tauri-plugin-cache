@@ -43,11 +43,11 @@ tauri-plugin-cache = "0.1.0"
 Add the plugin API package to your project:
 
 ```bash
-pnpm install tauri-plugin-cache
+pnpm install tauri-plugin-cache-api
 # or
-npm install tauri-plugin-cache
+npm install tauri-plugin-cache-api
 # or
-yarn add tauri-plugin-cache
+yarn add tauri-plugin-cache-api
 ```
 
 ## Setup
@@ -88,7 +88,7 @@ fn main() {
 ### JavaScript/TypeScript Example
 
 ```typescript
-import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache';
+import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache-api';
 
 // Store a value with TTL
 await set('user', { name: 'John', age: 30 }, { ttl: 60 }); // Expires in 60 seconds

@@ -11,7 +11,7 @@ importers:
       '@tauri-apps/api':
         specifier: ^2.5.0
         version: 2.5.0
-      tauri-plugin-cache:
+      tauri-plugin-cache-api:
         specifier: file:..\..
         version: file:../..
     devDependencies:
@@ -498,7 +498,7 @@ packages:
     resolution: {integrity: sha512-tT02QOeF0dbSIQ+/rUZw+76DyO6ATHvZJGOM2A/Ed6fBwZwUxqIun3beErpePAtwFIK3Mi9k2QAnhFVvUBun8g==}
     engines: {node: '>=18'}
 
-  tauri-plugin-cache@file:../..:
+  tauri-plugin-cache-api@file:../..:
     resolution: {directory: ../.., type: directory}
 
   tinyglobby@0.2.13:
@@ -918,7 +918,7 @@ snapshots:
       magic-string: 0.30.17
       zimmerframe: 1.1.2
 
-  tauri-plugin-cache@file:../..:
+  tauri-plugin-cache-api@file:../..:
     dependencies:
       '@tauri-apps/api': 2.5.0
 

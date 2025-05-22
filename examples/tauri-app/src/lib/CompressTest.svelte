@@ -1,5 +1,5 @@
 <script>
-  import { set, get, stats } from 'tauri-plugin-cache';
+  import { set, get, stats } from 'tauri-plugin-cache-api';
   
   let testResults = "";
   let isRunning = false;
