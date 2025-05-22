@@ -78,7 +78,7 @@ impl<R: Runtime> Cache<R> {
         // Update compression settings on mobile side
         // Let's update the config to send these settings to the native side
         let config = CompressionConfig {
-            enabled: default_compression,
+            enabled: default_compression.unwrap_or(true),
             level: compression_level.unwrap_or(6),
             threshold: compression_threshold.unwrap_or(crate::models::COMPRESSION_THRESHOLD),
         };
