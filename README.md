@@ -21,12 +21,36 @@ An advanced, versatile, and performance-focused disk caching solution for Tauri 
 
 ## Installation
 
-### Rust Dependencies
+### Using Tauri CLI (Recommended)
+
+The easiest way to install this plugin is using the Tauri CLI, which automatically adds both Rust and JavaScript dependencies to your project:
+
+```bash
+# Using npm
+npm run tauri add cache
+
+# Using pnpm
+pnpm tauri add cache
+
+# Using yarn
+yarn tauri add cache
+```
+
+This will:
+- Add the `tauri-plugin-cache` crate to your `Cargo.toml`
+- Install the `tauri-plugin-cache-api` npm package
+- Set up the necessary configurations
+
+### Manual Installation
+
+If you prefer to manually install the plugin, you can follow these steps:
+
+#### Rust Dependencies
 
 Add this plugin to your project using one of these methods:
 
 ```bash
-# Using cargo add (recommended)
+# Using cargo add
 cargo add tauri-plugin-cache
 ```
 
@@ -35,10 +59,10 @@ Or manually add to your `Cargo.toml` file:
 ```toml
 [dependencies]
 tauri = { version = "2.5.1" }
-tauri-plugin-cache = "0.1.0"
+tauri-plugin-cache = "0.1.2"
 ```
 
-### JavaScript/TypeScript API
+#### JavaScript/TypeScript API
 
 Add the plugin API package to your project:
 
