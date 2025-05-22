@@ -12,11 +12,11 @@ An advanced, versatile, and performance-focused disk caching solution for Tauri 
 - **Optional TTL**: Set expiration times for cache items
 - **Disk-based Cache**: Persistent data storage and retrieval
 - **Data Compression**: Enable compression for large data items
-- **Automatic Cleanup**: Background task to remove expired items
 - **Customizable Storage**: Configure where cache files are stored
-- **Memory Caching**: In-memory caching layer for improved performance
+- **Automatic Cleanup**: Background task to remove expired items
 - **Smart Compression**: Configurable compression levels and thresholds
 - **Configurable Cache Location**: Customize where cache files are stored
+- **Memory Caching**: In-memory caching layer for improved performance
 - **Performance Optimized**: Buffered I/O and chunked processing for large datasets
 
 ## Installation
