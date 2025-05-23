@@ -18,6 +18,7 @@ An advanced, versatile, and performance-focused disk caching solution for Tauri 
 - **Configurable Cache Location**: Customize where cache files are stored
 - **Memory Caching**: In-memory caching layer for improved performance
 - **Performance Optimized**: Buffered I/O and chunked processing for large datasets
+- **Multiple Compression Methods**: Choose between Zlib (fast) and LZMA2 (high ratio)
 
 ## Installation
 
@@ -90,12 +91,13 @@ fn main() {
 // Or with custom configuration
 fn main() {
     let cache_config = tauri_plugin_cache::CacheConfig {
-        cache_dir: Some("my_app_cache".into()),           // Custom subdirectory within app's cache directory
-        cache_file_name: Some("cache_data.json".into()),  // Custom cache file name
-        cleanup_interval: Some(120),                      // Clean expired items every 120 seconds
-        default_compression: Some(true),                  // Enable compression by default
-        compression_level: Some(7),                       // Higher compression level (0-9, where 9 is max)
-        compression_threshold: Some(4096),                // Only compress items larger than 4KB
+        cache_dir: Some("my_app_cache".into()),                                  // Custom subdirectory within app's cache directory
+        cache_file_name: Some("cache_data.json".into()),                         // Custom cache file name
+        cleanup_interval: Some(120),                                             // Clean expired items every 120 seconds
+        default_compression: Some(true),                                         // Enable compression by default
+        compression_level: Some(7),                                              // Higher compression level (0-9, where 9 is max)
+        compression_threshold: Some(4096),                                       // Only compress items larger than 4KB
+        compression_method: Some(tauri_plugin_cache::CompressionMethod::Lzma2),  // Default compression algorithm
     };
     
     tauri::Builder::default()
@@ -342,11 +344,17 @@ await set('largeData', largeObject, { compress: true });
 // Force no compression for this item
 await set('smallData', smallObject, { compress: false });
 
-// Use LZMA2 for high compression ratio (useful for large text data)
-await set('largeTextData', largeText, { compress: true, compressionMethod: 'lzma2' });
-
 // Use Zlib for faster compression
-await set('mediumData', mediumObject, { compress: true, compressionMethod: 'zlib' });
+await set('mediumData', mediumObject, { compress: true, compressionMethod: CompressionMethod.Zlib });
+
+// Use LZMA2 for high compression ratio (useful for large text data)
+await set('largeTextData', largeText, { compress: true, compressionMethod: CompressionMethod.Lzma2 });
+```
+
+When using the compression method feature, make sure to import the `CompressionMethod` enum:
+
+```typescript
+import { CompressionMethod } from 'tauri-plugin-cache-api';
 ```
 
 ### Compression Method Comparison

@@ -1,5 +1,5 @@
 <script>
-  import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache-api'
+  import { set, get, has, remove, clear, stats, CompressionMethod } from 'tauri-plugin-cache-api'
 
 	let response = ''
 	let key = 'test-key'
@@ -16,7 +16,8 @@
 		
 		set(key, value, { 
 			ttl: ttlValue,
-			compress: compress
+			compress: compress,
+			compressionMethod: CompressionMethod.Lzma2
 		})
 			.then(() => updateResponse(`Successfully set "${key}" with value: ${value}${compress ? ' (compressed)' : ''}`))
 			.catch(err => updateResponse(`Error: ${err.toString()}`))

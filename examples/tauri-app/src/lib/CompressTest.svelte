@@ -1,5 +1,5 @@
 <script>
-  import { set, get, stats } from 'tauri-plugin-cache-api';
+  import { set, get, stats, CompressionMethod } from 'tauri-plugin-cache-api';
   
   let testResults = "";
   let isRunning = false;
