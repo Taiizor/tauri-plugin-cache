@@ -159,7 +159,7 @@ impl Default for CacheConfig {
             cache_dir: None,
             cache_file_name: None,
             cleanup_interval: Some(60),        // Default 60 seconds
-            default_compression: Some(true),   // Default no compression
+            default_compression: Some(true),   // Default compression enabled
             compression_level: Some(6),        // Default medium compression level
             compression_threshold: Some(1024), // Default 1KB threshold
         }
