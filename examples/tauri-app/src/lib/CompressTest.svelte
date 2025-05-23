@@ -158,18 +158,20 @@
   <h2>Compression Test</h2>
   <p>This test measures the effect of compression on performance and size.</p>
   
-  <div class="button-group">
+  <div class="test-buttons">
     <button on:click={runCompressionTest} disabled={isRunning} class="main-btn">
       {isRunning ? 'Test running...' : 'Run Comprehensive Test'}
     </button>
     
     <div class="specific-test-buttons">
-      <button on:click={() => testSpecificMethod('zlib')} disabled={isRunning}>
-        Test Zlib Only
+      <button on:click={() => testSpecificMethod('zlib')} disabled={isRunning} class="method-btn zlib-btn">
+        <span class="method-name">Zlib</span>
+        <span class="method-desc">Test Fast Compression</span>
       </button>
       
-      <button on:click={() => testSpecificMethod('lzma2')} disabled={isRunning}>
-        Test LZMA2 Only
+      <button on:click={() => testSpecificMethod('lzma2')} disabled={isRunning} class="method-btn lzma-btn">
+        <span class="method-name">LZMA2</span>
+        <span class="method-desc">Test High Ratio Compression</span>
       </button>
     </div>
   </div>
@@ -193,6 +195,10 @@
     --button-text-color: var(--button-text, white);
     --results-bg: var(--surface-alt, #f5f5f5);
     --text-color: var(--text, #333);
+    --zlib-color: #536dfe;
+    --zlib-hover: #758ffe;
+    --lzma-color: #6200ee;
+    --lzma-hover: #7722ff;
   }
 
   /* Dark mode support */
@@ -206,66 +212,132 @@
       --button-text-color: white;
       --results-bg: #2d2d2d;
       --text-color: #eee;
+      --zlib-color: #536dfe;
+      --zlib-hover: #758ffe;
+      --lzma-color: #bb86fc;
+      --lzma-hover: #cda5fd;
     }
   }
   
   .compression-test {
-    padding: 1rem;
+    padding: 1.5rem;
     border: 1px solid var(--test-border-color);
     border-radius: 8px;
     margin-top: 2rem;
     margin-bottom: 2rem;
     background-color: var(--test-background);
     color: var(--text-color);
+    text-align: center;
   }
   
   h2 {
     margin-top: 0;
     color: var(--text-color);
+    margin-bottom: 0.5rem;
   }
   
-  .button-group {
+  p {
+    margin-bottom: 1.5rem;
+    color: var(--text-light, #666);
+  }
+  
+  .test-buttons {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 1rem;
-    margin: 1rem 0;
+  }
+  
+  .main-btn {
+    width: 100%;
+    max-width: 500px;
+    font-weight: bold;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    background-color: var(--button-bg);
+    color: var(--button-text-color);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+  
+  .main-btn:hover:not(:disabled) {
+    background-color: var(--button-hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
   
   .specific-test-buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: 1rem;
+    width: 100%;
+    max-width: 500px;
+    justify-content: space-between;
   }
   
-  button {
-    padding: 8px 16px;
-    background-color: var(--button-bg);
-    color: var(--button-text-color);
+  .method-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
   }
   
-  .main-btn {
+  .zlib-btn {
+    background-color: var(--zlib-color);
+  }
+  
+  .zlib-btn:hover:not(:disabled) {
+    background-color: var(--zlib-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .lzma-btn {
+    background-color: var(--lzma-color);
+  }
+  
+  .lzma-btn:hover:not(:disabled) {
+    background-color: var(--lzma-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .method-name {
     font-weight: bold;
-    padding: 10px 20px;
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+  
+  .method-desc {
+    font-size: 0.8rem;
+    opacity: 0.9;
   }
   
   button:disabled {
     background-color: var(--button-disabled-bg);
     cursor: not-allowed;
-  }
-  
-  button:hover:not(:disabled) {
-    background-color: var(--button-hover-bg);
+    transform: none;
+    box-shadow: none;
   }
   
   .test-results {
-    margin-top: 1rem;
+    margin-top: 1.5rem;
     background-color: var(--results-bg);
     padding: 1rem;
-    border-radius: 4px;
+    border-radius: 6px;
     color: var(--text-color);
+    text-align: left;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
   }
   
   pre {
@@ -275,5 +347,14 @@
     font-size: 0.9rem;
     margin: 0;
     color: var(--text-color);
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  /* Responsive layout */
+  @media (max-width: 500px) {
+    .specific-test-buttons {
+      flex-direction: column;
+    }
   }
 </style> 
