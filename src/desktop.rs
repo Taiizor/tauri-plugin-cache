@@ -10,6 +10,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{plugin::PluginApi, AppHandle, Runtime};
+use xz2::read::XzDecoder;
+use xz2::write::XzEncoder;
 
 use crate::models::*;
 use crate::Error;
@@ -182,54 +184,101 @@ impl<R: Runtime> Cache<R> {
         Ok(())
     }
 
-    /// Compress a JSON value using zlib with configurable compression
-    fn compress_value(&self, value: &serde_json::Value) -> crate::Result<Vec<u8>> {
+    /// Compress a JSON value using a specific configuration
+    fn compress_value_with_config(
+        &self,
+        value: &serde_json::Value,
+        config: &CompressionConfig,
+    ) -> crate::Result<Vec<u8>> {
         // First serialize to JSON string to determine size
         let json_string = serde_json::to_string(value)
             .map_err(|e| Error::Cache(format!("Failed to serialize value: {}", e)))?;
 
         // Check if value is below the compression threshold
-        if !self.compression.enabled || json_string.len() < self.compression.threshold {
+        if !config.enabled || json_string.len() < config.threshold {
             // Return a special marker that indicates this value wasn't compressed
-            let mut result = Vec::with_capacity(json_string.len() + 1);
+            let mut result = Vec::with_capacity(json_string.len() + 2);
             result.push(0); // Marker for uncompressed data
+            result.push(0); // Method marker (unused for uncompressed)
             result.extend_from_slice(json_string.as_bytes());
             return Ok(result);
         }
 
-        // Apply compression with the configured level
-        let compression_level = Compression::new(self.compression.level);
-        let mut encoder = ZlibEncoder::new(Vec::new(), compression_level);
-
-        // For large data, write in chunks to avoid memory spikes
+        // For large data, use chunked processing to avoid memory spikes
         let bytes = json_string.as_bytes();
         const CHUNK_SIZE: usize = 64 * 1024; // 64KB chunks
 
-        if bytes.len() > CHUNK_SIZE {
-            // Process in chunks for large data
-            for chunk in bytes.chunks(CHUNK_SIZE) {
-                encoder
-                    .write_all(chunk)
-                    .map_err(|e| Error::Cache(format!("Failed to compress value chunk: {}", e)))?;
+        match config.method {
+            CompressionMethod::Zlib => {
+                // Apply Zlib compression with the configured level
+                let zlib_level = Compression::new(config.level);
+                let mut encoder = ZlibEncoder::new(Vec::new(), zlib_level);
+
+                if bytes.len() > CHUNK_SIZE {
+                    // Process in chunks for large data
+                    for chunk in bytes.chunks(CHUNK_SIZE) {
+                        encoder.write_all(chunk).map_err(|e| {
+                            Error::Cache(format!("Failed to compress value chunk: {}", e))
+                        })?;
+                    }
+                } else {
+                    // Small data can be written at once
+                    encoder
+                        .write_all(bytes)
+                        .map_err(|e| Error::Cache(format!("Failed to compress value: {}", e)))?;
+                }
+
+                // Add marker for compressed data
+                let mut compressed = encoder
+                    .finish()
+                    .map_err(|e| Error::Cache(format!("Failed to finish compression: {}", e)))?;
+
+                // Prepend markers (1 = compressed, 1 = Zlib)
+                let mut result = Vec::with_capacity(compressed.len() + 2);
+                result.push(1); // Compressed marker
+                result.push(1); // Method marker: 1 = Zlib
+                result.append(&mut compressed);
+
+                Ok(result)
             }
-        } else {
-            // Small data can be written at once
-            encoder
-                .write_all(bytes)
-                .map_err(|e| Error::Cache(format!("Failed to compress value: {}", e)))?;
+            CompressionMethod::Lzma2 => {
+                // Apply LZMA2 compression with the configured level
+                let mut encoder = XzEncoder::new(Vec::new(), config.level);
+
+                if bytes.len() > CHUNK_SIZE {
+                    // Process in chunks for large data
+                    for chunk in bytes.chunks(CHUNK_SIZE) {
+                        encoder.write_all(chunk).map_err(|e| {
+                            Error::Cache(format!("Failed to compress value chunk: {}", e))
+                        })?;
+                    }
+                } else {
+                    // Small data can be written at once
+                    encoder
+                        .write_all(bytes)
+                        .map_err(|e| Error::Cache(format!("Failed to compress value: {}", e)))?;
+                }
+
+                // Add marker for compressed data
+                let mut compressed = encoder
+                    .finish()
+                    .map_err(|e| Error::Cache(format!("Failed to finish compression: {}", e)))?;
+
+                // Prepend markers (1 = compressed, 2 = LZMA2)
+                let mut result = Vec::with_capacity(compressed.len() + 2);
+                result.push(1); // Compressed marker
+                result.push(2); // Method marker: 2 = LZMA2
+                result.append(&mut compressed);
+
+                Ok(result)
+            }
         }
+    }
 
-        // Add marker for compressed data
-        let mut compressed = encoder
-            .finish()
-            .map_err(|e| Error::Cache(format!("Failed to finish compression: {}", e)))?;
-
-        // Prepend marker (1 = compressed)
-        let mut result = Vec::with_capacity(compressed.len() + 1);
-        result.push(1); // Marker for compressed data
-        result.append(&mut compressed);
-
-        Ok(result)
+    /// Compress a JSON value using the default compression configuration
+    #[allow(dead_code)]
+    fn compress_value(&self, value: &serde_json::Value) -> crate::Result<Vec<u8>> {
+        self.compress_value_with_config(value, &self.compression)
     }
 
     /// Decompress a compressed value back to JSON
@@ -240,29 +289,54 @@ impl<R: Runtime> Cache<R> {
             ));
         }
 
-        // Check the compression marker
+        // First byte indicates if data is compressed
         let is_compressed = data[0] == 1;
-        let actual_data = &data[1..]; // Skip the marker byte
 
         if !is_compressed {
-            // Data wasn't compressed, parse directly
-            let string_data = std::str::from_utf8(actual_data)
+            // Data is not compressed - parse the JSON directly
+            let json_data = &data[2..]; // Skip the marker bytes
+
+            let string_data = std::str::from_utf8(json_data)
                 .map_err(|e| Error::Cache(format!("Failed to decode uncompressed data: {}", e)))?;
 
             return serde_json::from_str(string_data)
                 .map_err(|e| Error::Cache(format!("Failed to deserialize value: {}", e)));
         }
 
-        // Data was compressed, decompress it
-        let mut decoder = ZlibDecoder::new(actual_data);
-        let mut decompressed_data = String::new();
+        // Second byte indicates compression method
+        let method_marker = data[1];
+        let compressed_data = &data[2..]; // Skip the marker bytes
 
-        decoder
-            .read_to_string(&mut decompressed_data)
-            .map_err(|e| Error::Cache(format!("Failed to decompress value: {}", e)))?;
+        match method_marker {
+            1 => {
+                // Zlib decompression
+                let mut decoder = ZlibDecoder::new(compressed_data);
+                let mut json_string = String::new();
 
-        serde_json::from_str(&decompressed_data)
-            .map_err(|e| Error::Cache(format!("Failed to deserialize value: {}", e)))
+                decoder
+                    .read_to_string(&mut json_string)
+                    .map_err(|e| Error::Cache(format!("Failed to decompress Zlib data: {}", e)))?;
+
+                serde_json::from_str(&json_string)
+                    .map_err(|e| Error::Cache(format!("Failed to parse decompressed JSON: {}", e)))
+            }
+            2 => {
+                // LZMA2 decompression
+                let mut decoder = XzDecoder::new(compressed_data);
+                let mut json_string = String::new();
+
+                decoder
+                    .read_to_string(&mut json_string)
+                    .map_err(|e| Error::Cache(format!("Failed to decompress LZMA2 data: {}", e)))?;
+
+                serde_json::from_str(&json_string)
+                    .map_err(|e| Error::Cache(format!("Failed to parse decompressed JSON: {}", e)))
+            }
+            _ => Err(Error::Cache(format!(
+                "Unknown compression method marker: {}",
+                method_marker
+            ))),
+        }
     }
 
     /// Sets a value in the cache with an optional TTL
@@ -306,9 +380,21 @@ impl<R: Runtime> Cache<R> {
             .and_then(|opt| opt.compress)
             .unwrap_or(self.compression.enabled);
 
+        // Create a temporary compression config based on options
+        let temp_compression = CompressionConfig {
+            enabled: should_compress,
+            level: self.compression.level,
+            threshold: self.compression.threshold,
+            method: options
+                .as_ref()
+                .and_then(|opt| opt.compression_method.clone())
+                .unwrap_or(self.compression.method.clone()),
+        };
+
+        // Process the value based on compression settings
         let entry = if should_compress {
-            // Compress the value
-            let processed_data = self.compress_value(&value_json)?;
+            // Compress the value using the temporary compression config
+            let processed_data = self.compress_value_with_config(&value_json, &temp_compression)?;
             // Store the processed data as a base64 string
             let encoded_str = STANDARD.encode(&processed_data);
             CacheEntry {
@@ -582,11 +668,13 @@ impl<R: Runtime> Cache<R> {
         default_compression: bool,
         compression_level: Option<u32>,
         threshold: Option<usize>,
+        compression_method: Option<CompressionMethod>,
     ) {
         self.compression = CompressionConfig {
             enabled: default_compression,
             level: compression_level.unwrap_or(6),
             threshold: threshold.unwrap_or(COMPRESSION_THRESHOLD),
+            method: compression_method.unwrap_or(CompressionMethod::Zlib),
         };
     }
 }

@@ -13,6 +13,7 @@ pub fn run() {
         default_compression: Some(true),
         compression_level: Some(9),
         compression_threshold: Some(4096),
+        compression_method: Some(tauri_plugin_cache::CompressionMethod::Lzma2),
     };
     
     tauri::Builder::default()

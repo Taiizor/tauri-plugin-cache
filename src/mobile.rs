@@ -74,6 +74,7 @@ impl<R: Runtime> Cache<R> {
         default_compression: bool,
         compression_level: Option<u32>,
         compression_threshold: Option<usize>,
+        compression_method: Option<CompressionMethod>,
     ) {
         // Update compression settings on mobile side
         // Let's update the config to send these settings to the native side
@@ -81,6 +82,7 @@ impl<R: Runtime> Cache<R> {
             enabled: default_compression.unwrap_or(true),
             level: compression_level.unwrap_or(6),
             threshold: compression_threshold.unwrap_or(crate::models::COMPRESSION_THRESHOLD),
+            method: compression_method.unwrap_or(CompressionMethod::Zlib),
         };
 
         // Send configuration to native side

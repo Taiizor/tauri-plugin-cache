@@ -3,6 +3,22 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 // The size threshold in bytes after which compression will be applied
 pub const COMPRESSION_THRESHOLD: usize = 1024; // 1KB
 
+/// Supported compression methods
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum CompressionMethod {
+    /// Zlib compression (default, balanced speed/ratio)
+    Zlib,
+    /// LZMA2 compression (better compression ratio, slower)
+    Lzma2,
+}
+
+impl Default for CompressionMethod {
+    fn default() -> Self {
+        Self::Zlib
+    }
+}
+
 /// Options for setting an item in the cache
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -11,6 +27,8 @@ pub struct SetItemOptions {
     pub ttl: Option<u64>,
     /// Whether to compress the data before storing
     pub compress: Option<bool>,
+    /// Compression method to use (overrides default)
+    pub compression_method: Option<CompressionMethod>,
 }
 
 /// A cache item with its value and expiration time
@@ -123,6 +141,8 @@ pub struct CompressionConfig {
     pub level: u32,
     /// Threshold in bytes after which compression is applied
     pub threshold: usize,
+    /// Compression method to use
+    pub method: CompressionMethod,
 }
 
 impl Default for CompressionConfig {
@@ -131,6 +151,7 @@ impl Default for CompressionConfig {
             enabled: false,
             level: 6, // Default compression level
             threshold: COMPRESSION_THRESHOLD,
+            method: CompressionMethod::Zlib,
         }
     }
 }
@@ -151,6 +172,8 @@ pub struct CacheConfig {
     pub compression_level: Option<u32>,
     /// Threshold in bytes after which compression is applied
     pub compression_threshold: Option<usize>,
+    /// Compression method to use (zlib or lzma2)
+    pub compression_method: Option<CompressionMethod>,
 }
 
 impl Default for CacheConfig {
@@ -162,6 +185,7 @@ impl Default for CacheConfig {
             default_compression: Some(true),   // Default compression enabled
             compression_level: Some(6),        // Default medium compression level
             compression_threshold: Some(1024), // Default 1KB threshold
+            compression_method: Some(CompressionMethod::Zlib), // Default to Zlib
         }
     }
 }

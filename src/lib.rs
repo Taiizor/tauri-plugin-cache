@@ -101,6 +101,7 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
                 let default_compression = config_clone.default_compression.unwrap_or(true);
                 let compression_level = config_clone.compression_level;
                 let compression_threshold = config_clone.compression_threshold;
+                let compression_method = config_clone.compression_method;
 
                 // Initialize the cache with cleanup interval
                 let mut cache = desktop::init_with_config(
@@ -115,6 +116,7 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
                     default_compression,
                     compression_level,
                     compression_threshold,
+                    compression_method,
                 );
                 cache
             };
@@ -165,6 +167,7 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
                 let default_compression = config_clone.default_compression.unwrap_or(true);
                 let compression_level = config_clone.compression_level;
                 let compression_threshold = config_clone.compression_threshold;
+                let compression_method = config_clone.compression_method;
 
                 // Initialize the cache with cleanup interval
                 let mut cache = mobile::init_with_config(
@@ -179,6 +182,7 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
                     default_compression,
                     compression_level,
                     compression_threshold,
+                    compression_method,
                 );
                 cache
             };

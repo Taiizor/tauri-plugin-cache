@@ -304,6 +304,13 @@ Gets cache statistics.
 
 This plugin supports data compression to reduce the disk space used by cache items. You can enable compression for individual items or set it as the default for all cache items.
 
+### Compression Methods
+
+The plugin supports multiple compression methods to optimize storage based on your specific needs:
+
+- **Zlib**: Default method, provides a good balance between compression ratio and speed
+- **LZMA2**: Better compression ratio (especially for base64 encoded data), but slower compression speed
+
 ### Benefits of Compression
 
 - **Reduced Disk Usage**: Compresses data to save disk space
@@ -317,6 +324,9 @@ You can configure the default compression behavior when initializing the plugin:
 ```rust
 let cache_config = tauri_plugin_cache::CacheConfig {
     default_compression: Some(true), // Enable compression by default
+    compression_level: Some(7),      // Higher compression level (0-9)
+    compression_threshold: Some(4096), // Only compress items larger than 4KB
+    compression_method: Some(tauri_plugin_cache::CompressionMethod::Lzma2), // Use LZMA2
     // Other options...
 };
 ```
@@ -331,7 +341,22 @@ await set('largeData', largeObject, { compress: true });
 
 // Force no compression for this item
 await set('smallData', smallObject, { compress: false });
+
+// Use LZMA2 for high compression ratio (useful for large text data)
+await set('largeTextData', largeText, { compress: true, compressionMethod: 'lzma2' });
+
+// Use Zlib for faster compression
+await set('mediumData', mediumObject, { compress: true, compressionMethod: 'zlib' });
 ```
+
+### Compression Method Comparison
+
+| Method | Compression Ratio | Compression Speed | Decompression Speed | Best For |
+|--------|-------------------|-------------------|---------------------|----------|
+| Zlib   | Good              | Fast              | Fast                | General purpose, balanced performance |
+| LZMA2  | Excellent         | Slow              | Medium              | Base64 data, large text, maximum space saving |
+
+Choose LZMA2 when disk space is at a premium and you don't mind slower compression times. Zlib is better for general purpose use where compression/decompression speed is important.
 
 ## Platform Compatibility
 
