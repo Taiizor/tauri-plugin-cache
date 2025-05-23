@@ -6,6 +6,7 @@
 	let value = 'test-value'
 	let ttl = '10'
 	let compress = false
+	let compressionMethod = CompressionMethod.Zlib
 
 	function updateResponse(returnValue) {
 		response = `[${new Date().toLocaleTimeString()}] ` + (typeof returnValue === 'string' ? returnValue : JSON.stringify(returnValue)) + '<br>' + response
@@ -17,9 +18,12 @@
 		set(key, value, { 
 			ttl: ttlValue,
 			compress: compress,
-			compressionMethod: CompressionMethod.Lzma2
+			compressionMethod: compress ? compressionMethod : undefined
 		})
-			.then(() => updateResponse(`Successfully set "${key}" with value: ${value}${compress ? ' (compressed)' : ''}`))
+			.then(() => {
+				const methodInfo = compress ? ` (${compressionMethod} compressed)` : '';
+				updateResponse(`Successfully set "${key}" with value: ${value}${methodInfo}`);
+      })
 			.catch(err => updateResponse(`Error: ${err.toString()}`))
 	}
 
@@ -96,6 +100,23 @@
     </div>
     <div class="tooltip">Compression is recommended for large text data to save disk space</div>
   </div>
+  
+  {#if compress}
+  <div class="input-group radio-group">
+    <label>Compression Method:</label>
+    <div class="radio-options">
+      <label class="radio-label">
+        <input type="radio" bind:group={compressionMethod} value={CompressionMethod.Zlib} />
+        <span>Zlib (Fast)</span>
+      </label>
+      <label class="radio-label">
+        <input type="radio" bind:group={compressionMethod} value={CompressionMethod.Lzma2} />
+        <span>LZMA2 (High Ratio)</span>
+      </label>
+    </div>
+    <div class="tooltip">LZMA2 provides better compression but is slower. Zlib is faster but offers less compression.</div>
+  </div>
+  {/if}
   
   <div class="button-group">
     <button on:click={setItem}>Set</button>
@@ -261,6 +282,33 @@
   
   .toggle-input:focus + .toggle-label {
     box-shadow: 0 0 0 2px var(--toggle-on-shadow);
+  }
+  
+  /* Radio Buttons for Compression Method */
+  .radio-group {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-left: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .radio-options {
+    display: flex;
+    gap: 20px;
+    margin-top: 5px;
+  }
+  
+  .radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal;
+    width: auto;
+    margin-right: 15px;
+  }
+  
+  .radio-label input {
+    margin-right: 5px;
   }
   
   .input-group textarea {
