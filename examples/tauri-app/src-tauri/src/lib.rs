@@ -12,7 +12,7 @@ pub fn run() {
         cleanup_interval: Some(120),
         default_compression: Some(true),
         compression_level: Some(9),
-        compression_threshold: Some(1024 * 1024 * 16),
+        compression_threshold: Some(4096),
         compression_method: Some(tauri_plugin_cache::CompressionMethod::Lzma2),
     };
     
