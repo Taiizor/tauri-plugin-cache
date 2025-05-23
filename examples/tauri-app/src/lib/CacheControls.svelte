@@ -106,16 +106,18 @@
     <label>Compression Method:</label>
     <div class="radio-options">
       <label class="radio-label">
-        <input type="radio" bind:group={compressionMethod} value={CompressionMethod.Zlib} />
+        <input type="radio" bind:group={compressionMethod} value={CompressionMethod.Zlib} id="zlib-radio" class="custom-radio" />
+        <span class="radio-custom"></span>
         <span>Zlib (Fast)</span>
       </label>
       <label class="radio-label">
-        <input type="radio" bind:group={compressionMethod} value={CompressionMethod.Lzma2} />
+        <input type="radio" bind:group={compressionMethod} value={CompressionMethod.Lzma2} id="lzma2-radio" class="custom-radio" />
+        <span class="radio-custom"></span>
         <span>LZMA2 (High Ratio)</span>
       </label>
     </div>
-    <div class="tooltip">LZMA2 provides better compression but is slower. Zlib is faster but offers less compression.</div>
   </div>
+  <div class="tooltip compression-tooltip">LZMA2 provides better compression but is slower. Zlib is faster but offers less compression.</div>
   {/if}
   
   <div class="button-group">
@@ -286,16 +288,15 @@
   
   /* Radio Buttons for Compression Method */
   .radio-group {
-    flex-direction: column;
-    align-items: flex-start;
-    margin-left: 20px;
-    margin-bottom: 15px;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 5px;
   }
   
   .radio-options {
     display: flex;
     gap: 20px;
-    margin-top: 5px;
+    margin-left: 10px;
   }
   
   .radio-label {
@@ -305,10 +306,54 @@
     font-weight: normal;
     width: auto;
     margin-right: 15px;
+    position: relative;
   }
   
-  .radio-label input {
-    margin-right: 5px;
+  .custom-radio {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+  
+  .radio-custom {
+    position: relative;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--toggle-off);
+    background-color: var(--background);
+    transition: all 0.2s ease;
+  }
+  
+  .custom-radio:checked ~ .radio-custom {
+    border-color: var(--toggle-on);
+    background-color: var(--background);
+  }
+  
+  .custom-radio:checked ~ .radio-custom::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--toggle-on);
+  }
+  
+  .radio-label:hover .radio-custom {
+    border-color: var(--toggle-on);
+    box-shadow: 0 0 0 1px var(--toggle-on-shadow);
+  }
+  
+  .compression-tooltip {
+    margin-left: 120px;
+    margin-bottom: 10px;
   }
   
   .input-group textarea {
