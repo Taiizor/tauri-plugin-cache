@@ -158,8 +158,8 @@ This enables all cache operations including setting, getting, and removing cache
 
 ### Permission Table
 
-| Identifier | Description |
-| ---------- | ----------- |
+| Permission | Description |
+|------------|-------------|
 | cache:allow-set | Allows setting data in the cache |
 | cache:deny-set | Denies setting data in the cache |
 | cache:allow-get | Allows retrieving data from the cache |
@@ -228,6 +228,7 @@ async fn demo_cache(app_handle: tauri::AppHandle) -> Result<String, String> {
     let options = Some(tauri_plugin_cache::SetItemOptions { 
         ttl: Some(60),
         compress: None, // Use default compression setting
+        compression_method: None, // Use default compression method
     });
     cache.set("key".to_string(), "value", options).map_err(|e| e.to_string())?;
     
@@ -235,6 +236,7 @@ async fn demo_cache(app_handle: tauri::AppHandle) -> Result<String, String> {
     let compress_options = Some(tauri_plugin_cache::SetItemOptions {
         ttl: None,
         compress: Some(true), // Enable compression
+        compression_method: Some(tauri_plugin_cache::CompressionMethod::Lzma2), // Use LZMA2
     });
     cache.set("large_key".to_string(), large_value, compress_options).map_err(|e| e.to_string())?;
     
@@ -269,6 +271,7 @@ Sets an item in the cache with optional TTL and compression.
 - `options`: Optional settings
   - `ttl`: Time-to-live in seconds (item will be deleted after this time)
   - `compress`: Whether to compress the data before storing
+  - `compressionMethod`: Compression method to use (CompressionMethod.Zlib or CompressionMethod.Lzma2)
 
 #### `get<T = any>(key: string): Promise<T | null>`
 
@@ -351,10 +354,10 @@ await set('mediumData', mediumObject, { compress: true, compressionMethod: Compr
 await set('largeTextData', largeText, { compress: true, compressionMethod: CompressionMethod.Lzma2 });
 ```
 
-When using the compression method feature, make sure to import the `CompressionMethod` enum:
+When using the compression method feature, make sure to import the `CompressionMethod` enum along with the functions you need:
 
 ```typescript
-import { CompressionMethod } from 'tauri-plugin-cache-api';
+import { set, get, CompressionMethod } from 'tauri-plugin-cache-api';
 ```
 
 ### Compression Method Comparison
