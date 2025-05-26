@@ -11,6 +11,17 @@ license = "MIT"
 repository = "https://github.com/Taiizor/tauri-plugin-cache"
 readme = "README.md"
 
+[package.metadata.docs.rs]
+rustc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "partial", notes = "" }
+ios = { level = "partial", notes = "" }
+
 [features]
 default = ["desktop", "mobile"]
 desktop = []

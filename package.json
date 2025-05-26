@@ -35,6 +35,7 @@
   },
   "files": [
     "dist-js",
+    "LICENSE",
     "README.md"
   ],
   "scripts": {
