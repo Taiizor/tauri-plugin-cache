@@ -10,6 +10,13 @@
     isRunning = true;
     testResults = "Starting compression method comparison test...\n";
     
+    // Warning for mobile devices
+    if (navigator.userAgent.toLowerCase().includes('android') || 
+        navigator.userAgent.toLowerCase().includes('iphone')) {
+      testResults += `⚠️ WARNING: Test data size is automatically limited on mobile devices.\n`;
+      testResults += `LZMA2 compression is memory intensive on mobile devices, so performance may vary.\n\n`;
+    }
+    
     try {
       // Create large data for testing
       const largeData = generateLargeData();
@@ -84,22 +91,23 @@
   
   // Create test data with 1000 elements
   function generateLargeData() {
-    return Array.from({ length: 1000 }, (_, i) => ({
+    // Use fewer elements for mobile devices
+    const isMobile = navigator.userAgent.toLowerCase().includes('android') || 
+                    navigator.userAgent.toLowerCase().includes('iphone');
+    const elementCount = isMobile ? 300 : 1000; // 300 elements for mobile, 1000 for desktop
+    
+    // Limit description length
+    const descLength = isMobile ? 100 : 300; // Shorter description for mobile
+    
+    return Array.from({ length: elementCount }, (_, i) => ({
       id: i,
       name: `Item ${i}`,
-      description: `This is a test description for item ${i} to demonstrate compression efficiency. Compression works best with repetitive content. This text is somewhat longer and filled with the same expressions. Compressible data, compressible data, compressible data, compressible data...`,
+      description: `This is a test description for item ${i} to demonstrate compression efficiency.`.substring(0, descLength),
       metadata: {
         timestamp: Date.now(),
         tags: ["test", "compression", "example", "tauri", "cache", "plugin"],
         isActive: i % 2 === 0,
-        priority: Math.floor(Math.random() * 100),
-        nested: {
-          level1: {
-            level2: {
-              level3: "Deeply nested content"
-            }
-          }
-        }
+        priority: Math.floor(Math.random() * 100)
       }
     }));
   }
@@ -116,6 +124,13 @@
     
     isRunning = true;
     testResults = `Starting ${method} compression test...\n`;
+    
+    // Warning for LZMA2 on mobile devices
+    if (method === 'lzma2' && (navigator.userAgent.toLowerCase().includes('android') || 
+                             navigator.userAgent.toLowerCase().includes('iphone'))) {
+      testResults += `⚠️ WARNING: LZMA2 compression may cause issues on mobile devices due to memory limitations.\n`;
+      testResults += `Memory exhaustion errors may occur with large data.\n\n`;
+    }
     
     try {
       // Create large data for testing
