@@ -57,7 +57,7 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
             .map_err(|e| Error::Cache(format!("Failed to register Android plugin: {}", e)))?;
         
         // If registration successful, send configuration through method call
-        if let Err(e) = handle.run_mobile_plugin::<_, ()>("configure", &config_json) {
+        if let Err(e) = handle.run_mobile_plugin::<String>("configure", config_json) {
             // Log the error but continue
             eprintln!("Warning: Failed to configure Android cache plugin: {}", e);
         }
@@ -90,20 +90,20 @@ impl<R: Runtime> Cache<R> {
         // Update compression settings on mobile side
         // Let's update the config to send these settings to the native side
         let config = CompressionConfig {
-            enabled: default_compression.unwrap_or(true),
+            enabled: default_compression,
             level: compression_level.unwrap_or(6),
             threshold: compression_threshold.unwrap_or(crate::models::COMPRESSION_THRESHOLD),
             method: compression_method.unwrap_or(CompressionMethod::Zlib),
         };
 
         // Send configuration to native side
-        let _ = self.0.run_mobile_plugin("updateCompressionConfig", &config);
+        let _ = self.0.run_mobile_plugin::<EmptyResponse>("updateCompressionConfig", config);
         // Error is ignored because this feature might not exist in older versions of mobile plugins
         // Error handling should be added in a real application
     }
 
     /// Sets a value in the cache with optional TTL
-    pub fn set<T: Serialize>(
+    pub fn set<T: Serialize + DeserializeOwned + std::fmt::Debug>(
         &self,
         key: String,
         value: T,
@@ -115,7 +115,7 @@ impl<R: Runtime> Cache<R> {
             options,
         };
         self.0
-            .run_mobile_plugin("set", request)
+            .run_mobile_plugin::<EmptyResponse>("set", request)
             .map_err(|e| crate::Error::PluginInvoke(e))
     }
 
@@ -125,7 +125,7 @@ impl<R: Runtime> Cache<R> {
             key: key.to_string(),
         };
         self.0
-            .run_mobile_plugin::<_, Option<serde_json::Value>>("get", request)
+            .run_mobile_plugin::<Option<serde_json::Value>>("get", request)
             .map_err(|e| crate::Error::PluginInvoke(e))
     }
 
@@ -135,7 +135,7 @@ impl<R: Runtime> Cache<R> {
             key: key.to_string(),
         };
         self.0
-            .run_mobile_plugin("has", request)
+            .run_mobile_plugin::<BooleanResponse>("has", request)
             .map_err(|e| crate::Error::PluginInvoke(e))
     }
 
@@ -145,21 +145,21 @@ impl<R: Runtime> Cache<R> {
             key: key.to_string(),
         };
         self.0
-            .run_mobile_plugin("remove", request)
+            .run_mobile_plugin::<EmptyResponse>("remove", request)
             .map_err(|e| crate::Error::PluginInvoke(e))
     }
 
     /// Clears all values from the cache
     pub fn clear(&self) -> crate::Result<EmptyResponse> {
         self.0
-            .run_mobile_plugin::<_, EmptyResponse>("clear", ())
+            .run_mobile_plugin::<EmptyResponse>("clear", ())
             .map_err(|e| crate::Error::PluginInvoke(e))
     }
 
     /// Get cache statistics
     pub fn stats(&self) -> crate::Result<CacheStats> {
         self.0
-            .run_mobile_plugin::<_, CacheStats>("stats", ())
+            .run_mobile_plugin::<CacheStats>("stats", ())
             .map_err(|e| crate::Error::PluginInvoke(e))
     }
 }
