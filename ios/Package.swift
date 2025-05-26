@@ -27,7 +27,7 @@ let package = Package(
             name: "tauri-plugin-cache",
             dependencies: [
                 .byName(name: "Tauri"),
-                .product(name: "LZMA", package: "PLzmaSDK")
+                .product(name: "PLzmaSDK", package: "PLzmaSDK")
             ],
             path: "Sources")
     ]
