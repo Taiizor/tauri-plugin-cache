@@ -40,18 +40,29 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
             .map(|f| f.to_string_lossy().to_string()),
         cleanup_interval: Some(cleanup_interval),
         default_compression: Some(true),
+        compression_level: Some(6),
+        compression_threshold: Some(crate::models::COMPRESSION_THRESHOLD),
+        compression_method: Some(CompressionMethod::Zlib),
     };
 
     // Register the plugin with API
     #[cfg(target_os = "android")]
     let handle = {
         // Pass configuration to Android
-        let config_json = serde_json::to_string(&config).unwrap_or_default();
-        api.register_android_plugin_with_config(
-            "app.tauri.plugin.cache",
-            "CachePlugin",
-            config_json,
-        )?
+        let config_json = serde_json::to_string(&config)
+            .map_err(|e| Error::Cache(format!("Failed to serialize config: {}", e)))?;
+        
+        // Register the plugin
+        let handle = api.register_android_plugin("app.tauri.plugin.cache", "CachePlugin")
+            .map_err(|e| Error::Cache(format!("Failed to register Android plugin: {}", e)))?;
+        
+        // If registration successful, send configuration through method call
+        if let Err(e) = handle.run_mobile_plugin::<_, ()>("configure", &config_json) {
+            // Log the error but continue
+            eprintln!("Warning: Failed to configure Android cache plugin: {}", e);
+        }
+        
+        handle
     };
 
     #[cfg(target_os = "ios")]
