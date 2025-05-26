@@ -3,7 +3,7 @@ import Tauri
 import UIKit
 import Foundation
 import Compression
-import LZMA // Import LZMA library
+import PLzmaSDK
 
 // MARK: - Structures and Models
 
@@ -412,7 +412,7 @@ class CachePlugin: Plugin {
         }
     }
     
-    // Compression with LZMA2 (using LZMA library)
+    // Compression with LZMA2 (using PLzmaSDK library)
     private func compressWithLZMA2(data: Data) -> Data {
         var compressedData = Data()
         
@@ -429,12 +429,33 @@ class CachePlugin: Plugin {
         compressedData.append(2)
         
         do {
-            // Compression using LZMA library
-            let lzmaConfig = LZMAConfig()
-            lzmaConfig.level = UInt32(min(9, max(0, compressionLevel)))
-            lzmaConfig.dictionarySize = UInt32(min(1024 * 1024, data.count)) // Limit dictionary size to 1MB
+            // Create memory output stream to hold compressed data
+            let outStream = plzma.OutStream()
             
-            let lzmaData = try LZMA.compress(data: data, config: lzmaConfig)
+            // Create encoder with LZMA2 method
+            let encoder = plzma.Encoder(outStream: outStream, fileType: .raw, method: .LZMA2)
+            
+            // Configure compression
+            encoder.setCompressionLevel(UInt32(min(9, max(0, compressionLevel))))
+            
+            // Limit dictionary size for memory efficiency
+            let dictSize = min(1024 * 1024, data.count) // Max 1MB dictionary size
+            encoder.setProperty(plzma.EncoderPropertyId.dictionarySize, value: UInt32(dictSize))
+            
+            // Prepare input data
+            let inStream = plzma.InStream(data)
+            
+            // Open encoder
+            try encoder.open()
+            
+            // Add stream for compression
+            try encoder.addStream(inStream, path: "data")
+            
+            // Compress
+            try encoder.compress()
+            
+            // Get compressed data
+            let lzmaData = outStream.data
             compressedData.append(lzmaData)
             
             print("LZMA2 compressed \(data.count) bytes to \(lzmaData.count) bytes")
@@ -478,8 +499,25 @@ class CachePlugin: Plugin {
             // LZMA2 decompression
             let lzmaData = data.subdata(in: 2..<data.count)
             do {
-                let decompressedData = try LZMA.decompress(data: lzmaData)
-                return decompressedData
+                // Create input stream from compressed data
+                let inStream = plzma.InStream(lzmaData)
+                
+                // Create output stream to hold decompressed data
+                let outStream = plzma.OutStream()
+                
+                // Create decoder
+                let decoder = plzma.Decoder(inStream: inStream, fileType: .raw)
+                
+                // Open decoder
+                try decoder.open()
+                
+                // Decompress first item (we only have one)
+                if let item = try decoder.items().first {
+                    try decoder.extractItem(item, outStream: outStream)
+                }
+                
+                // Get decompressed data
+                return outStream.data
             } catch {
                 throw PluginError(code: .operationFailed, message: "Failed to decompress LZMA2 data: \(error)")
             }
