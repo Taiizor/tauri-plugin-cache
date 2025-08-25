@@ -37,4 +37,4 @@ flate2 = "1.1"
 xz2 = "0.1.7"
 
 [build-dependencies]
-tauri-plugin = { version = "2.3.0", features = ["build"] }
+tauri-plugin = { version = "2.4.0", features = ["build"] }
