@@ -17,6 +17,6 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@tauri-apps/cli": "^2.5.0",
     "svelte": "^5.33.2",
-    "vite": "^6.3.5"
+    "vite": "^6.3.6"
   }
 }
