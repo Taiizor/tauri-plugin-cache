@@ -47,7 +47,7 @@
     "@tauri-apps/api": "^2.9.0"
   },
   "devDependencies": {
-    "@rollup/plugin-typescript": "^12.2.0",
+    "@rollup/plugin-typescript": "^12.3.0",
     "rollup": "^4.52.5",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3"
