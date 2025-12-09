@@ -81,6 +81,24 @@ class CacheStats: Encodable {
     }
 }
 
+// Helper class to return optional values (can be nil)
+class OptionalValueResponse: Encodable {
+    let value: String?
+    
+    init(_ value: String?) {
+        self.value = value
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        if let value = value {
+            try container.encode(value)
+        } else {
+            try container.encodeNil()
+        }
+    }
+}
+
 // MARK: - Cache Plugin
 
 class CachePlugin: Plugin {
@@ -263,7 +281,7 @@ class CachePlugin: Plugin {
         
         // Check if file exists
         guard fileManager.fileExists(atPath: fileURL.path) else {
-            invoke.resolveNil()
+            invoke.resolve(OptionalValueResponse(nil))
             return
         }
         
@@ -273,13 +291,13 @@ class CachePlugin: Plugin {
             data = try Data(contentsOf: fileURL)
         } catch {
             print("Failed to read cache file: \(error)")
-            invoke.resolveNil()
+            invoke.resolve(OptionalValueResponse(nil))
             return
         }
         
         // Parse as JSON
         guard let entryDict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            invoke.resolveNil()
+            invoke.resolve(OptionalValueResponse(nil))
             return
         }
         
@@ -289,7 +307,7 @@ class CachePlugin: Plugin {
             if now > expiresAt {
                 // Item expired, delete it
                 try? fileManager.removeItem(at: fileURL)
-                invoke.resolveNil()
+                invoke.resolve(OptionalValueResponse(nil))
                 return
             }
         }
@@ -297,7 +315,7 @@ class CachePlugin: Plugin {
         // Extract value
         guard let valueBase64 = entryDict["value"] as? String,
               let valueData = Data(base64Encoded: valueBase64) else {
-            invoke.resolveNil()
+            invoke.resolve(OptionalValueResponse(nil))
             return
         }
         
@@ -310,7 +328,7 @@ class CachePlugin: Plugin {
                 finalData = try decompressData(valueData)
             } catch {
                 print("Failed to decompress data: \(error)")
-                invoke.resolveNil()
+                invoke.resolve(OptionalValueResponse(nil))
                 return
             }
         } else {
@@ -320,12 +338,12 @@ class CachePlugin: Plugin {
         // Parse JSON data
         if let jsonObject = try? JSONSerialization.jsonObject(with: finalData),
            let jsonString = String(data: try JSONSerialization.data(withJSONObject: jsonObject), encoding: .utf8) {
-            invoke.resolveString(jsonString)
+            invoke.resolve(OptionalValueResponse(jsonString))
         } else if let stringValue = String(data: finalData, encoding: .utf8) {
             // Accept as direct string
-            invoke.resolveString(stringValue)
+            invoke.resolve(OptionalValueResponse(stringValue))
         } else {
-            invoke.resolveNil()
+            invoke.resolve(OptionalValueResponse(nil))
         }
     }
     
