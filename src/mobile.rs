@@ -6,7 +6,6 @@ use tauri::{
 };
 
 use crate::models::*;
-use crate::Error;
 
 #[cfg(target_os = "ios")]
 tauri::ios_plugin_binding!(init_plugin_cache);
@@ -69,9 +68,17 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
 
     #[cfg(target_os = "ios")]
     let handle = {
-        // Pass configuration to iOS
+        // Register the plugin
+        let handle = api.register_ios_plugin(init_plugin_cache)?;
+
+        // Send configuration through method call (same approach as Android)
         let config_json = serde_json::to_string(&config).unwrap_or_default();
-        api.register_ios_plugin_with_config(init_plugin_cache, config_json)?
+        if let Err(e) = handle.run_mobile_plugin::<String>("configure", config_json) {
+            // Log the error but continue
+            eprintln!("Warning: Failed to configure iOS cache plugin: {}", e);
+        }
+
+        handle
     };
 
     Ok(Cache(handle))
