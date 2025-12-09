@@ -80,18 +80,24 @@ jobs:
         working-directory: examples/tauri-app
         shell: bash
         run: |
-          # Use --no-cache on Windows to avoid ENOENT error with local packages
+          # Use npm on Windows to avoid bun ENOENT bug with local file: packages
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            bun install --no-cache
+            npm install
           else
             bun install
           fi
 
       - name: Build example app
         working-directory: examples/tauri-app
+        shell: bash
         env:
           RUSTFLAGS: "-D warnings"
-        run: bun tauri build --target ${{ matrix.target }} --debug
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            npm run tauri -- build --target ${{ matrix.target }} --debug
+          else
+            bun tauri build --target ${{ matrix.target }} --debug
+          fi
 
   # Android build
   android:
