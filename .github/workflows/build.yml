@@ -71,6 +71,11 @@ jobs:
             . -> target
             examples/tauri-app/src-tauri -> target
 
+      - name: Build JS API
+        run: |
+          bun install
+          bun run build
+
       - name: Install example dependencies
         working-directory: examples/tauri-app
         run: bun install
@@ -120,6 +125,11 @@ jobs:
             . -> target
             examples/tauri-app/src-tauri -> target
 
+      - name: Build JS API
+        run: |
+          bun install
+          bun run build
+
       - name: Install example dependencies
         working-directory: examples/tauri-app
         run: bun install
@@ -157,6 +167,11 @@ jobs:
           workspaces: |
             . -> target
             examples/tauri-app/src-tauri -> target
+
+      - name: Build JS API
+        run: |
+          bun install
+          bun run build
 
       - name: Install example dependencies
         working-directory: examples/tauri-app
