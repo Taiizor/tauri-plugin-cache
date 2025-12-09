@@ -78,7 +78,14 @@ jobs:
 
       - name: Install example dependencies
         working-directory: examples/tauri-app
-        run: bun install
+        shell: bash
+        run: |
+          # Use --no-cache on Windows to avoid ENOENT error with local packages
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            bun install --no-cache
+          else
+            bun install
+          fi
 
       - name: Build example app
         working-directory: examples/tauri-app
@@ -185,4 +192,4 @@ jobs:
         working-directory: examples/tauri-app
         env:
           RUSTFLAGS: "-D warnings"
-        run: bun tauri ios build --target aarch64-apple-ios-sim --debug
+        run: bun tauri ios build --target aarch64-sim --debug
