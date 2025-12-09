@@ -4,9 +4,11 @@
 *.sublime*
 .idea/
 debug.log
-# package-lock.json
+package-lock.json
 .vscode/settings.json
-# yarn.lock
+pnpm-lock.yaml
+yarn.lock
+bun.lock
 
 /.tauri
 /target
