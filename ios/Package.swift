@@ -17,8 +17,7 @@ let package = Package(
             targets: ["tauri-plugin-cache"]),
     ],
     dependencies: [
-        .package(name: "Tauri", path: "../.tauri/tauri-api"),
-        .package(url: "https://github.com/OlehKulykov/PLzmaSDK.git", .exact("1.5.0"))
+        .package(name: "Tauri", path: "../.tauri/tauri-api")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -26,8 +25,7 @@ let package = Package(
         .target(
             name: "tauri-plugin-cache",
             dependencies: [
-                .byName(name: "Tauri"),
-                .product(name: "PLzmaSDK", package: "PLzmaSDK")
+                .byName(name: "Tauri")
             ],
             path: "Sources")
     ]

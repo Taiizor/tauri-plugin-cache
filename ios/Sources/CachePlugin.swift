@@ -3,7 +3,6 @@ import Tauri
 import UIKit
 import Foundation
 import Compression
-import PLzmaSDK
 
 // MARK: - Structures and Models
 
@@ -168,23 +167,52 @@ class CachePlugin: Plugin {
         // Apply compression
         let finalData: Data
         var isCompressed = false
+        var methodUsed: UInt8 = 0
         
         if shouldCompress && valueData.count > compressionThreshold {
             // Choose compression method
             if compressionMethodToUse.lowercased() == "lzma2" {
-                finalData = compressWithLZMA2(data: valueData)
-                isCompressed = true
+                if let compressed = compressWithLZMA(data: valueData) {
+                    finalData = compressed
+                    isCompressed = true
+                    methodUsed = 2
+                } else {
+                    // Fall back to Zlib
+                    if let compressed = compressWithZlib(data: valueData) {
+                        finalData = compressed
+                        isCompressed = true
+                        methodUsed = 1
+                    } else {
+                        finalData = valueData
+                    }
+                }
             } else {
-                finalData = compressWithZlib(data: valueData)
-                isCompressed = true
+                if let compressed = compressWithZlib(data: valueData) {
+                    finalData = compressed
+                    isCompressed = true
+                    methodUsed = 1
+                } else {
+                    finalData = valueData
+                }
             }
         } else {
             finalData = valueData
         }
         
+        // Build data with compression header if compressed
+        var storedData: Data
+        if isCompressed {
+            storedData = Data()
+            storedData.append(1) // Compression indicator
+            storedData.append(methodUsed) // Method marker
+            storedData.append(finalData)
+        } else {
+            storedData = finalData
+        }
+        
         // Create cache entry
         var cacheEntry: [String: Any] = [
-            "value": finalData.base64EncodedString(),
+            "value": storedData.base64EncodedString(),
             "is_compressed": isCompressed
         ]
         
@@ -387,87 +415,48 @@ class CachePlugin: Plugin {
         invoke.resolve(CacheStats(totalSize: totalSize, activeSize: activeSize))
     }
     
-    // MARK: - Helper Methods
+    // MARK: - Compression Methods using Apple's Compression framework
     
-    // Compression with Zlib
-    private func compressWithZlib(data: Data) -> Data {
-        var compressedData = Data()
-        
-        // Compression indicator: 1 = compressed, 1 = Zlib
-        compressedData.append(1)
-        compressedData.append(1)
-        
-        // Compress data with Zlib in Swift
-        do {
-            // Data compression in iOS
-            let zlibData = try data.deflated(level: compressionLevel)
-            compressedData.append(zlibData)
-            
-            print("Zlib compressed \(data.count) bytes to \(zlibData.count) bytes")
-            return compressedData
-        } catch {
-            print("Zlib compression error: \(error)")
-            // Return uncompressed data in case of simple error
-            return data
-        }
+    /// Compress data using Zlib (via Apple's Compression framework)
+    private func compressWithZlib(data: Data) -> Data? {
+        return compressData(data, algorithm: COMPRESSION_ZLIB)
     }
     
-    // Compression with LZMA2 (using PLzmaSDK library)
-    private func compressWithLZMA2(data: Data) -> Data {
-        var compressedData = Data()
-        
-        // Memory limitation for very large data
-        let maxLzma2Size = 10 * 1024 * 1024 // Don't use for data larger than 10MB
-        
-        if data.count > maxLzma2Size {
-            print("Data too large for LZMA2 compression, using Zlib instead")
-            return compressWithZlib(data: data)
-        }
-        
-        // Compression indicator: 1 = compressed, 2 = LZMA2
-        compressedData.append(1)
-        compressedData.append(2)
-        
-        do {
-            // Create memory output stream to hold compressed data
-            let outStream = plzma.OutStream()
-            
-            // Create encoder with LZMA2 method
-            let encoder = plzma.Encoder(outStream: outStream, fileType: .raw, method: .LZMA2)
-            
-            // Configure compression
-            encoder.setCompressionLevel(UInt32(min(9, max(0, compressionLevel))))
-            
-            // Limit dictionary size for memory efficiency
-            let dictSize = min(1024 * 1024, data.count) // Max 1MB dictionary size
-            encoder.setProperty(plzma.EncoderPropertyId.dictionarySize, value: UInt32(dictSize))
-            
-            // Prepare input data
-            let inStream = plzma.InStream(data)
-            
-            // Open encoder
-            try encoder.open()
-            
-            // Add stream for compression
-            try encoder.addStream(inStream, path: "data")
-            
-            // Compress
-            try encoder.compress()
-            
-            // Get compressed data
-            let lzmaData = outStream.data
-            compressedData.append(lzmaData)
-            
-            print("LZMA2 compressed \(data.count) bytes to \(lzmaData.count) bytes")
-            return compressedData
-        } catch {
-            print("LZMA2 compression error: \(error)")
-            // Fall back to Zlib in case of error
-            return compressWithZlib(data: data)
-        }
+    /// Compress data using LZMA (via Apple's Compression framework)
+    /// Note: Apple's Compression framework uses LZMA, not LZMA2, but provides similar compression ratios
+    private func compressWithLZMA(data: Data) -> Data? {
+        return compressData(data, algorithm: COMPRESSION_LZMA)
     }
     
-    // Decompress data
+    /// Generic compression using Apple's Compression framework
+    private func compressData(_ data: Data, algorithm: compression_algorithm) -> Data? {
+        // Calculate destination buffer size (worst case: slightly larger than source)
+        let destinationBufferSize = data.count + 1024
+        let destinationBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: destinationBufferSize)
+        defer { destinationBuffer.deallocate() }
+        
+        let sourceBuffer = [UInt8](data)
+        
+        let compressedSize = compression_encode_buffer(
+            destinationBuffer,
+            destinationBufferSize,
+            sourceBuffer,
+            data.count,
+            nil,
+            algorithm
+        )
+        
+        guard compressedSize > 0 else {
+            print("Compression failed for algorithm: \(algorithm)")
+            return nil
+        }
+        
+        let compressedData = Data(bytes: destinationBuffer, count: compressedSize)
+        print("Compressed \(data.count) bytes to \(compressedSize) bytes using algorithm \(algorithm)")
+        return compressedData
+    }
+    
+    /// Decompress data based on the compression header
     private func decompressData(_ data: Data) throws -> Data {
         guard data.count >= 2 else {
             throw PluginError(code: .invalidArgs, message: "Invalid compressed data")
@@ -483,88 +472,68 @@ class CachePlugin: Plugin {
         
         // Second byte is compression method
         let method = data[1]
+        let compressedData = data.subdata(in: 2..<data.count)
         
+        let algorithm: compression_algorithm
         switch method {
         case 1:
-            // Zlib decompression
-            let zlibData = data.subdata(in: 2..<data.count)
-            do {
-                let decompressedData = try zlibData.inflated()
-                return decompressedData
-            } catch {
-                throw PluginError(code: .operationFailed, message: "Failed to decompress Zlib data: \(error)")
-            }
-            
+            algorithm = COMPRESSION_ZLIB
         case 2:
-            // LZMA2 decompression
-            let lzmaData = data.subdata(in: 2..<data.count)
-            do {
-                // Create input stream from compressed data
-                let inStream = plzma.InStream(lzmaData)
-                
-                // Create output stream to hold decompressed data
-                let outStream = plzma.OutStream()
-                
-                // Create decoder
-                let decoder = plzma.Decoder(inStream: inStream, fileType: .raw)
-                
-                // Open decoder
-                try decoder.open()
-                
-                // Decompress first item (we only have one)
-                if let item = try decoder.items().first {
-                    try decoder.extractItem(item, outStream: outStream)
-                }
-                
-                // Get decompressed data
-                return outStream.data
-            } catch {
-                throw PluginError(code: .operationFailed, message: "Failed to decompress LZMA2 data: \(error)")
-            }
-            
+            algorithm = COMPRESSION_LZMA
         default:
             throw PluginError(code: .invalidArgs, message: "Unknown compression method: \(method)")
         }
-    }
-}
-
-// MARK: - Data Extensions
-
-extension Data {
-    // Zlib compression extension
-    func deflated(level: Int = 6) throws -> Data {
-        let destSize = self.count / 4 + 1024 // Sufficiently large buffer
-        var dest = [UInt8](repeating: 0, count: destSize)
-        var destLen = UInt(destSize)
         
-        let source = [UInt8](self)
-        
-        let result = compression_encode_buffer(&dest, destLen, source, UInt(source.count),
-                                            nil, COMPRESSION_ZLIB)
-        
-        if result == 0 {
-            throw PluginError(code: .operationFailed, message: "Zlib compression failed")
+        guard let decompressedData = decompressData(compressedData, algorithm: algorithm) else {
+            throw PluginError(code: .operationFailed, message: "Failed to decompress data")
         }
         
-        return Data(dest[0..<Int(destLen)])
+        return decompressedData
     }
     
-    // Zlib decompression extension
-    func inflated() throws -> Data {
-        let destSize = self.count * 4 // Decompressed data is usually larger
-        var dest = [UInt8](repeating: 0, count: destSize)
-        var destLen = UInt(destSize)
+    /// Generic decompression using Apple's Compression framework
+    private func decompressData(_ data: Data, algorithm: compression_algorithm) -> Data? {
+        // Estimate decompressed size (start with 4x, grow if needed)
+        var destinationBufferSize = data.count * 4
+        var destinationBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: destinationBufferSize)
         
-        let source = [UInt8](self)
+        let sourceBuffer = [UInt8](data)
         
-        let result = compression_decode_buffer(&dest, destLen, source, UInt(source.count),
-                                            nil, COMPRESSION_ZLIB)
+        var decompressedSize = compression_decode_buffer(
+            destinationBuffer,
+            destinationBufferSize,
+            sourceBuffer,
+            data.count,
+            nil,
+            algorithm
+        )
         
-        if result == 0 {
-            throw PluginError(code: .operationFailed, message: "Zlib decompression failed")
+        // If buffer was too small, try with larger buffer
+        if decompressedSize == 0 || decompressedSize == destinationBufferSize {
+            destinationBuffer.deallocate()
+            destinationBufferSize = data.count * 16
+            destinationBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: destinationBufferSize)
+            
+            decompressedSize = compression_decode_buffer(
+                destinationBuffer,
+                destinationBufferSize,
+                sourceBuffer,
+                data.count,
+                nil,
+                algorithm
+            )
         }
         
-        return Data(dest[0..<Int(destLen)])
+        defer { destinationBuffer.deallocate() }
+        
+        guard decompressedSize > 0 else {
+            print("Decompression failed for algorithm: \(algorithm)")
+            return nil
+        }
+        
+        let decompressedData = Data(bytes: destinationBuffer, count: decompressedSize)
+        print("Decompressed \(data.count) bytes to \(decompressedSize) bytes using algorithm \(algorithm)")
+        return decompressedData
     }
 }
 
@@ -573,4 +542,4 @@ extension Data {
 @_cdecl("init_plugin_cache")
 func initPlugin() -> Plugin {
     return CachePlugin()
-} 
+}
