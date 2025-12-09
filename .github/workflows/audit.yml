@@ -2,19 +2,17 @@ name: Audit
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
   push:
     branches:
       - develop
     paths:
-      - "**/Cargo.lock"
       - "**/Cargo.toml"
       - ".github/workflows/audit.yml"
   pull_request:
     branches:
       - develop
     paths:
-      - "**/Cargo.lock"
       - "**/Cargo.toml"
       - ".github/workflows/audit.yml"
 
@@ -29,7 +27,14 @@ jobs:
       issues: write
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Generate Cargo.lock
+        run: cargo generate-lockfile
+
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
