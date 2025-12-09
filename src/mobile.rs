@@ -12,6 +12,7 @@ use crate::Error;
 tauri::ios_plugin_binding!(init_plugin_cache);
 
 // initializes the Kotlin or Swift plugin classes
+#[allow(dead_code)]
 pub fn init<R: Runtime, C: DeserializeOwned>(
     _app: &AppHandle<R>,
     api: PluginApi<R, C>,

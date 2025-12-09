@@ -4,6 +4,22 @@ import UIKit
 import Foundation
 import Compression
 
+// MARK: - Custom Error Type
+
+enum CachePluginError: Error, LocalizedError {
+    case invalidArgs(String)
+    case operationFailed(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidArgs(let message):
+            return "Invalid arguments: \(message)"
+        case .operationFailed(let message):
+            return "Operation failed: \(message)"
+        }
+    }
+}
+
 // MARK: - Structures and Models
 
 class ConfigureRequest: Decodable {
@@ -132,13 +148,13 @@ class CachePlugin: Plugin {
         // A slightly different approach to decode generic types in Swift
         let json = invoke.argsJson
         guard let jsonData = json.data(using: .utf8) else {
-            throw PluginError(code: .invalidArgs, message: "Invalid JSON data")
+            throw CachePluginError.invalidArgs("Invalid JSON data")
         }
         
         guard let dict = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
               let key = dict["key"] as? String,
               dict["value"] != nil else {
-            throw PluginError(code: .invalidArgs, message: "Missing key or value")
+            throw CachePluginError.invalidArgs("Missing key or value")
         }
         
         // Extract options separately
@@ -459,7 +475,7 @@ class CachePlugin: Plugin {
     /// Decompress data based on the compression header
     private func decompressData(_ data: Data) throws -> Data {
         guard data.count >= 2 else {
-            throw PluginError(code: .invalidArgs, message: "Invalid compressed data")
+            throw CachePluginError.invalidArgs("Invalid compressed data")
         }
         
         // First byte is compression indicator
@@ -481,11 +497,11 @@ class CachePlugin: Plugin {
         case 2:
             algorithm = COMPRESSION_LZMA
         default:
-            throw PluginError(code: .invalidArgs, message: "Unknown compression method: \(method)")
+            throw CachePluginError.invalidArgs("Unknown compression method: \(method)")
         }
         
         guard let decompressedData = decompressData(compressedData, algorithm: algorithm) else {
-            throw PluginError(code: .operationFailed, message: "Failed to decompress data")
+            throw CachePluginError.operationFailed("Failed to decompress data")
         }
         
         return decompressedData
