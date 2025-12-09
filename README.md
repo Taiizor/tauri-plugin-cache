@@ -35,6 +35,9 @@ pnpm tauri add cache
 
 # Using yarn
 yarn tauri add cache
+
+# Using bun
+bun tauri add cache
 ```
 
 This will:
@@ -69,6 +72,8 @@ Add the plugin API package to your project:
 
 ```bash
 pnpm install tauri-plugin-cache-api
+# or
+bun install tauri-plugin-cache-api
 # or
 npm install tauri-plugin-cache-api
 # or
