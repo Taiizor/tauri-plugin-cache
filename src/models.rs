@@ -4,19 +4,14 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 pub const COMPRESSION_THRESHOLD: usize = 1024; // 1KB
 
 /// Supported compression methods
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum CompressionMethod {
     /// Zlib compression (default, balanced speed/ratio)
+    #[default]
     Zlib,
     /// LZMA2 compression (better compression ratio, slower)
     Lzma2,
-}
-
-impl Default for CompressionMethod {
-    fn default() -> Self {
-        Self::Zlib
-    }
 }
 
 /// Options for setting an item in the cache
