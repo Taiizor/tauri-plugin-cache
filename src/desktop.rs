@@ -10,7 +10,9 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{plugin::PluginApi, AppHandle, Runtime};
+#[cfg(feature = "lzma2-native")]
 use xz2::read::XzDecoder;
+#[cfg(feature = "lzma2-native")]
 use xz2::write::XzEncoder;
 
 use crate::models::*;
@@ -241,6 +243,7 @@ impl<R: Runtime> Cache<R> {
 
                 Ok(result)
             }
+            #[cfg(feature = "lzma2-native")]
             CompressionMethod::Lzma2 => {
                 // Apply LZMA2 compression with the configured level
                 let mut encoder = XzEncoder::new(Vec::new(), config.level);
@@ -272,6 +275,11 @@ impl<R: Runtime> Cache<R> {
 
                 Ok(result)
             }
+            #[cfg(not(feature = "lzma2-native"))]
+            CompressionMethod::Lzma2 => Err(Error::Cache(
+                "LZMA2 support is not compiled in; enable the `lzma2-native` feature of tauri-plugin-cache"
+                    .to_string(),
+            )),
         }
     }
 
@@ -320,6 +328,7 @@ impl<R: Runtime> Cache<R> {
                 serde_json::from_str(&json_string)
                     .map_err(|e| Error::Cache(format!("Failed to parse decompressed JSON: {}", e)))
             }
+            #[cfg(feature = "lzma2-native")]
             2 => {
                 // LZMA2 decompression
                 let mut decoder = XzDecoder::new(compressed_data);
@@ -332,6 +341,11 @@ impl<R: Runtime> Cache<R> {
                 serde_json::from_str(&json_string)
                     .map_err(|e| Error::Cache(format!("Failed to parse decompressed JSON: {}", e)))
             }
+            #[cfg(not(feature = "lzma2-native"))]
+            2 => Err(Error::Cache(
+                "Cache entry is LZMA2 compressed, but LZMA2 support is not compiled in; enable the `lzma2-native` feature of tauri-plugin-cache"
+                    .to_string(),
+            )),
             _ => Err(Error::Cache(format!(
                 "Unknown compression method marker: {}",
                 method_marker

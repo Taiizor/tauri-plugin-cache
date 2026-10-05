@@ -63,8 +63,26 @@ Or manually add to your `Cargo.toml` file:
 ```toml
 [dependencies]
 tauri = { version = "2.9.4" }
-tauri-plugin-cache = "0.1.6"
+tauri-plugin-cache = "0.1.7"
 ```
+
+##### Cargo Features
+
+| Feature | Default | Description |
+| --- | --- | --- |
+| `desktop` | yes | Desktop platform support |
+| `mobile` | yes | Mobile platform support |
+| `lzma2-native` | yes | Adds the `CompressionMethod::Lzma2` codec. Links the liblzma C library through `xz2`/`lzma-sys`, so it requires a C toolchain at build time. |
+
+The Zlib codec uses `flate2` with its pure-Rust backend, `lzma2-native` pulls C code into the dependency tree. For a C-free build you can opt-out this feature with:
+
+```toml
+tauri-plugin-cache = { version = "0.1.7", default-features = false, features = ["desktop", "mobile"] }
+```
+
+In that configuration `CompressionMethod::Lzma2` returns an error instead of
+compressing, and reading previously stored LZMA2 entries fails with a matching
+message.
 
 #### JavaScript/TypeScript API
 

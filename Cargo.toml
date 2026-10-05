@@ -1,6 +1,6 @@
 [package]
 name = "tauri-plugin-cache"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["Taiizor <taiizor@vegalya.com>"]
 description = "Advanced disk caching solution for Tauri applications. Provides compression, TTL management, memory caching, automatic cleanup, and cross-platform support. Enhances data access performance and storage optimization."
 edition = "2021"
@@ -23,9 +23,12 @@ android = { level = "partial", notes = "" }
 ios = { level = "partial", notes = "" }
 
 [features]
-default = ["desktop", "mobile"]
+default = ["desktop", "mobile", "lzma2-native"]
 desktop = []
 mobile = []
+# Enables LZMA2 compression; links the liblzma C library via xz2/lzma-sys
+# Opt out with `default-features = false` for a dependency tree without C code.
+lzma2-native = ["dep:xz2"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -34,7 +37,7 @@ serde_json = "1.0"
 base64 = "0.23.0"
 thiserror = "2"
 flate2 = "1.1"
-xz2 = "0.1.7"
+xz2 = { version = "0.1.7", optional = true }
 
 [build-dependencies]
 tauri-plugin = { version = "2.5.2", features = ["build"] }
