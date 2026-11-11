@@ -18,7 +18,7 @@ An advanced, versatile, and performance-focused disk caching solution for Tauri 
 - **Configurable Cache Location**: Customize where cache files are stored
 - **Memory Caching**: In-memory caching layer for improved performance
 - **Performance Optimized**: Buffered I/O and chunked processing for large datasets
-- **Multiple Compression Methods**: Choose between Zlib (fast) and LZMA2 (high ratio)
+- **Multiple Compression Methods**: Choose between Zlib (pure Rust, fast), LZMA2 (maximum ratio), and Zstd (ultra-fast, modern ratio)
 
 ## Installation
 
@@ -375,6 +375,9 @@ await set('mediumData', mediumObject, { compress: true, compressionMethod: Compr
 
 // Use LZMA2 for high compression ratio (useful for large text data)
 await set('largeTextData', largeText, { compress: true, compressionMethod: CompressionMethod.Lzma2 });
+
+// Use Zstd for ultra-fast compression and decompression
+await set('ultraFastData', largeObject, { compress: true, compressionMethod: CompressionMethod.Zstd });
 ```
 
 When using the compression method feature, make sure to import the `CompressionMethod` enum along with the functions you need:
@@ -387,10 +390,11 @@ import { set, get, CompressionMethod } from 'tauri-plugin-cache-api';
 
 | Method | Compression Ratio | Compression Speed | Decompression Speed | Best For |
 |--------|-------------------|-------------------|---------------------|----------|
-| Zlib   | Good              | Fast              | Fast                | General purpose, balanced performance |
-| LZMA2  | Excellent         | Slow              | Medium              | Base64 data, large text, maximum space saving |
+| Zlib   | Good              | Fast              | Fast                | General purpose, pure-Rust builds |
+| LZMA2  | Maximum           | Slow              | Medium              | Base64 data, large text, maximum space saving (requires `lzma2-native`) |
+| Zstd   | Excellent         | Ultra Fast        | Ultra Fast          | High throughput, real-time caching, modern performance (requires `zstd`) |
 
-Choose LZMA2 when disk space is at a premium and you don't mind slower compression times. Zlib is better for general purpose use where compression/decompression speed is important.
+Choose Zstd for the best overall speed-to-ratio tradeoff and ultra-fast read/write operations. Choose LZMA2 when disk space is at a premium and maximum ratio is desired. Zlib is the default choice for general purpose use and pure-Rust (C-toolchain-free) environments.
 
 ## Platform Compatibility
 
