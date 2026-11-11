@@ -445,8 +445,8 @@ class CachePlugin(private val activity: Activity): Plugin(activity) {
     @Command
     fun details(invoke: Invoke) {
         try {
-            val key = invoke.parseArgs(GetArgs::class.java).key
-            val file = getCacheFile(key)
+            val request = invoke.parseArgs(GetRequest::class.java)
+            val file = File(cacheDir, request.key)
             
             if (!file.exists()) {
                 invoke.resolve()
@@ -466,19 +466,19 @@ class CachePlugin(private val activity: Activity): Plugin(activity) {
             
             val isCompressed = entryJson.optBoolean("is_compressed", false)
             val result = JSObject()
-            result.put("key", key)
+            result.put("key", request.key)
             
             if (isCompressed) {
-                val valueStr = entryJson.optString("value", "")
+                val valueStr = entryJson.getString("value")
                 val decoded = Base64.decode(valueStr, Base64.DEFAULT)
-                val method = if (decoded.size >= 2) {
+                var method: String? = null
+                if (decoded.size >= 2) {
                     when (decoded[1].toInt()) {
-                        1 -> "zlib"
-                        2 -> "lzma2"
-                        3 -> "zstd"
-                        else -> null
+                        1 -> method = "zlib"
+                        2 -> method = "lzma2"
+                        3 -> method = "zstd"
                     }
-                } else null
+                }
                 
                 val compressedSize = if (decoded.size >= 2) decoded.size - 2 else decoded.size
                 val decompressed = decompressData(decoded)
@@ -490,10 +490,12 @@ class CachePlugin(private val activity: Activity): Plugin(activity) {
                 result.put("originalSize", originalSize)
                 result.put("compressedSize", compressedSize)
                 result.put("isCompressed", true)
-                if (method != null) result.put("compressionMethod", method)
+                if (method != null) {
+                    result.put("compressionMethod", method)
+                }
                 result.put("compressionRatio", ratio)
             } else {
-                val rawBytes = entryJson.opt("value")?.toString()?.toByteArray(Charsets.UTF_8)?.size ?: 0
+                val rawBytes = entryJson.getString("value").toByteArray(Charsets.UTF_8).size
                 result.put("originalSize", rawBytes)
                 result.put("compressedSize", rawBytes)
                 result.put("isCompressed", false)
