@@ -441,6 +441,71 @@ class CachePlugin(private val activity: Activity): Plugin(activity) {
             invoke.reject("Failed to get stats: ${e.message}")
         }
     }
+
+    @Command
+    fun details(invoke: Invoke) {
+        try {
+            val key = invoke.parseArgs(GetArgs::class.java).key
+            val file = getCacheFile(key)
+            
+            if (!file.exists()) {
+                invoke.resolve()
+                return
+            }
+            
+            val content = file.readText()
+            val entryJson = JSONObject(content)
+            
+            if (entryJson.has("expires_at")) {
+                val expiresAt = entryJson.getLong("expires_at")
+                if (System.currentTimeMillis() > expiresAt) {
+                    invoke.resolve()
+                    return
+                }
+            }
+            
+            val isCompressed = entryJson.optBoolean("is_compressed", false)
+            val result = JSObject()
+            result.put("key", key)
+            
+            if (isCompressed) {
+                val valueStr = entryJson.optString("value", "")
+                val decoded = Base64.decode(valueStr, Base64.DEFAULT)
+                val method = if (decoded.size >= 2) {
+                    when (decoded[1].toInt()) {
+                        1 -> "zlib"
+                        2 -> "lzma2"
+                        3 -> "zstd"
+                        else -> null
+                    }
+                } else null
+                
+                val compressedSize = if (decoded.size >= 2) decoded.size - 2 else decoded.size
+                val decompressed = decompressData(decoded)
+                val originalSize = decompressed.size
+                val ratio = if (originalSize > 0) {
+                    Math.max(0.0, (1.0 - (compressedSize.toDouble() / originalSize.toDouble())) * 100.0)
+                } else 0.0
+                
+                result.put("originalSize", originalSize)
+                result.put("compressedSize", compressedSize)
+                result.put("isCompressed", true)
+                if (method != null) result.put("compressionMethod", method)
+                result.put("compressionRatio", ratio)
+            } else {
+                val rawBytes = entryJson.opt("value")?.toString()?.toByteArray(Charsets.UTF_8)?.size ?: 0
+                result.put("originalSize", rawBytes)
+                result.put("compressedSize", rawBytes)
+                result.put("isCompressed", false)
+                result.put("compressionRatio", 0.0)
+            }
+            
+            invoke.resolve(result)
+        } catch (e: Exception) {
+            android.util.Log.e("CachePlugin", "Details error: ${e.message}")
+            invoke.reject("Failed to get details: ${e.message}")
+        }
+    }
     
     // Data compression helper method
     private fun compressData(data: ByteArray, method: String): ByteArray {
@@ -453,7 +518,7 @@ class CachePlugin(private val activity: Activity): Plugin(activity) {
         
         // Safety check - if data is too large or despite LZMA2 being requested it exceeds memory limit
         // switch to Zlib which consumes less memory
-        val useZlib = method.toLowerCase() != "lzma2" || data.size > maxLzma2Size
+        val useZlib = method.lowercase() != "lzma2" || data.size > maxLzma2Size
         
         if (!useZlib) {
             outputStream.write(2) // Method marker: 2 = LZMA2

@@ -35,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: ubuntu-latest
+          - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
           - platform: macos-latest
             target: aarch64-apple-darwin
@@ -60,10 +60,10 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install dependencies (Ubuntu)
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -101,7 +101,7 @@ jobs:
 
   # Android build
   android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v7
