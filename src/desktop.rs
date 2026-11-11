@@ -10,8 +10,14 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{plugin::PluginApi, AppHandle, Runtime};
+#[cfg(feature = "lzma2-native")]
 use xz2::read::XzDecoder;
+#[cfg(feature = "lzma2-native")]
 use xz2::write::XzEncoder;
+#[cfg(feature = "zstd")]
+use zstd::stream::read::Decoder as ZstdDecoder;
+#[cfg(feature = "zstd")]
+use zstd::stream::write::Encoder as ZstdEncoder;
 
 use crate::models::*;
 use crate::Error;
@@ -37,7 +43,7 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
     cleanup_interval: u64,
 ) -> crate::Result<Cache<R>> {
     let cache = Cache {
-        app: app.clone(),
+        app: Some(app.clone()),
         cache_file_path,
         cleanup_interval,
         file_mutex: Arc::new(Mutex::new(())),
@@ -54,7 +60,7 @@ pub fn init_with_config<R: Runtime, C: DeserializeOwned>(
 /// Access to the cache APIs.
 #[allow(dead_code)]
 pub struct Cache<R: Runtime> {
-    app: AppHandle<R>,
+    app: Option<AppHandle<R>>,
     cache_file_path: PathBuf,
     cleanup_interval: u64,
     file_mutex: Arc<Mutex<()>>,
@@ -241,6 +247,7 @@ impl<R: Runtime> Cache<R> {
 
                 Ok(result)
             }
+            #[cfg(feature = "lzma2-native")]
             CompressionMethod::Lzma2 => {
                 // Apply LZMA2 compression with the configured level
                 let mut encoder = XzEncoder::new(Vec::new(), config.level);
@@ -272,6 +279,50 @@ impl<R: Runtime> Cache<R> {
 
                 Ok(result)
             }
+            #[cfg(not(feature = "lzma2-native"))]
+            CompressionMethod::Lzma2 => Err(Error::Cache(
+                "LZMA2 support is not compiled in; enable the `lzma2-native` feature of tauri-plugin-cache"
+                    .to_string(),
+            )),
+            #[cfg(feature = "zstd")]
+            CompressionMethod::Zstd => {
+                let zstd_level = if config.level == 0 {
+                    zstd::DEFAULT_COMPRESSION_LEVEL
+                } else {
+                    config.level as i32
+                };
+                let mut encoder = ZstdEncoder::new(Vec::new(), zstd_level)
+                    .map_err(|e| Error::Cache(format!("Failed to initialize Zstd encoder: {}", e)))?;
+
+                if bytes.len() > CHUNK_SIZE {
+                    for chunk in bytes.chunks(CHUNK_SIZE) {
+                        encoder.write_all(chunk).map_err(|e| {
+                            Error::Cache(format!("Failed to compress value chunk: {}", e))
+                        })?;
+                    }
+                } else {
+                    encoder
+                        .write_all(bytes)
+                        .map_err(|e| Error::Cache(format!("Failed to compress value: {}", e)))?;
+                }
+
+                let mut compressed = encoder
+                    .finish()
+                    .map_err(|e| Error::Cache(format!("Failed to finish Zstd compression: {}", e)))?;
+
+                // Prepend markers (1 = compressed, 3 = Zstd)
+                let mut result = Vec::with_capacity(compressed.len() + 2);
+                result.push(1); // Compressed marker
+                result.push(3); // Method marker: 3 = Zstd
+                result.append(&mut compressed);
+
+                Ok(result)
+            }
+            #[cfg(not(feature = "zstd"))]
+            CompressionMethod::Zstd => Err(Error::Cache(
+                "Zstd support is not compiled in; enable the `zstd` feature of tauri-plugin-cache"
+                    .to_string(),
+            )),
         }
     }
 
@@ -320,6 +371,7 @@ impl<R: Runtime> Cache<R> {
                 serde_json::from_str(&json_string)
                     .map_err(|e| Error::Cache(format!("Failed to parse decompressed JSON: {}", e)))
             }
+            #[cfg(feature = "lzma2-native")]
             2 => {
                 // LZMA2 decompression
                 let mut decoder = XzDecoder::new(compressed_data);
@@ -332,6 +384,30 @@ impl<R: Runtime> Cache<R> {
                 serde_json::from_str(&json_string)
                     .map_err(|e| Error::Cache(format!("Failed to parse decompressed JSON: {}", e)))
             }
+            #[cfg(not(feature = "lzma2-native"))]
+            2 => Err(Error::Cache(
+                "Cache entry is LZMA2 compressed, but LZMA2 support is not compiled in; enable the `lzma2-native` feature of tauri-plugin-cache"
+                    .to_string(),
+            )),
+            #[cfg(feature = "zstd")]
+            3 => {
+                // Zstd decompression
+                let mut decoder = ZstdDecoder::new(compressed_data)
+                    .map_err(|e| Error::Cache(format!("Failed to initialize Zstd decoder: {}", e)))?;
+                let mut json_string = String::new();
+
+                decoder
+                    .read_to_string(&mut json_string)
+                    .map_err(|e| Error::Cache(format!("Failed to decompress Zstd data: {}", e)))?;
+
+                serde_json::from_str(&json_string)
+                    .map_err(|e| Error::Cache(format!("Failed to parse decompressed JSON: {}", e)))
+            }
+            #[cfg(not(feature = "zstd"))]
+            3 => Err(Error::Cache(
+                "Cache entry is Zstd compressed, but Zstd support is not compiled in; enable the `zstd` feature of tauri-plugin-cache"
+                    .to_string(),
+            )),
             _ => Err(Error::Cache(format!(
                 "Unknown compression method marker: {}",
                 method_marker
@@ -676,5 +752,271 @@ impl<R: Runtime> Cache<R> {
             threshold: threshold.unwrap_or(COMPRESSION_THRESHOLD),
             method: compression_method.unwrap_or(CompressionMethod::Zlib),
         };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn create_test_cache(dir: &tempfile::TempDir) -> Cache<tauri::Wry> {
+        let cache_path = dir.path().join("test_cache.json");
+
+        Cache {
+            app: None,
+            cache_file_path: cache_path,
+            cleanup_interval: 60,
+            file_mutex: Arc::new(Mutex::new(())),
+            compression: CompressionConfig::default(),
+            value_cache: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    #[test]
+    fn test_basic_cache_operations() {
+        let dir = tempdir().unwrap();
+        let cache = create_test_cache(&dir);
+
+        // Test set and get
+        let key = "user_name".to_string();
+        let val = "Taiizor".to_string();
+        cache.set(key.clone(), val.clone(), None).unwrap();
+
+        let retrieved = cache.get(&key).unwrap().unwrap();
+        assert_eq!(retrieved, serde_json::Value::String(val.clone()));
+
+        // Test has
+        let has_resp = cache.has(&key).unwrap();
+        assert!(has_resp.value);
+
+        // Test non-existent key
+        let non_existent = cache.has("non_existent").unwrap();
+        assert!(!non_existent.value);
+
+        // Test size
+        assert_eq!(cache.size().unwrap(), 1);
+        assert_eq!(cache.active_size().unwrap(), 1);
+
+        // Test remove
+        cache.remove(&key).unwrap();
+        assert!(!cache.has(&key).unwrap().value);
+        assert_eq!(cache.size().unwrap(), 0);
+    }
+
+    #[test]
+    fn test_clear() {
+        let dir = tempdir().unwrap();
+        let cache = create_test_cache(&dir);
+
+        cache.set("k1".into(), "v1".to_string(), None).unwrap();
+        cache.set("k2".into(), "v2".to_string(), None).unwrap();
+        assert_eq!(cache.size().unwrap(), 2);
+
+        cache.clear().unwrap();
+        assert_eq!(cache.size().unwrap(), 0);
+        assert!(!cache.has("k1").unwrap().value);
+        assert!(!cache.has("k2").unwrap().value);
+    }
+
+    #[test]
+    fn test_ttl_expiration() {
+        let dir = tempdir().unwrap();
+        let cache = create_test_cache(&dir);
+
+        // Set item with TTL = 1 second
+        cache
+            .set(
+                "temp_item".into(),
+                "expires_fast".to_string(),
+                Some(SetItemOptions {
+                    ttl: Some(1),
+                    compress: None,
+                    compression_method: None,
+                }),
+            )
+            .unwrap();
+
+        assert!(cache.has("temp_item").unwrap().value);
+        assert_eq!(cache.active_size().unwrap(), 1);
+
+        // Wait 2 seconds for it to expire
+        std::thread::sleep(Duration::from_secs(2));
+
+        // In-memory and file should see it as expired
+        assert!(!cache.has("temp_item").unwrap().value);
+        assert_eq!(cache.get("temp_item").unwrap(), None);
+        assert_eq!(cache.active_size().unwrap(), 0);
+        // Total size before disk cleanup might still be 1
+        assert_eq!(cache.size().unwrap(), 1);
+    }
+
+    #[test]
+    fn test_persistence_across_instances() {
+        let dir = tempdir().unwrap();
+        let cache_path = dir.path().join("persist_cache.json");
+
+        // Instance 1 writes
+        {
+            let cache: Cache<tauri::Wry> = Cache {
+                app: None,
+                cache_file_path: cache_path.clone(),
+                cleanup_interval: 60,
+                file_mutex: Arc::new(Mutex::new(())),
+                compression: CompressionConfig::default(),
+                value_cache: Arc::new(Mutex::new(HashMap::new())),
+            };
+            cache.set("persisted".into(), 42i32, None).unwrap();
+        }
+
+        // Instance 2 reads from the same file
+        {
+            let cache: Cache<tauri::Wry> = Cache {
+                app: None,
+                cache_file_path: cache_path,
+                cleanup_interval: 60,
+                file_mutex: Arc::new(Mutex::new(())),
+                compression: CompressionConfig::default(),
+                value_cache: Arc::new(Mutex::new(HashMap::new())),
+            };
+            let val = cache.get("persisted").unwrap().unwrap();
+            assert_eq!(val, serde_json::json!(42));
+        }
+    }
+
+    #[test]
+    fn test_zlib_compression() {
+        let dir = tempdir().unwrap();
+        let mut cache = create_test_cache(&dir);
+        cache.init_with_config(true, Some(6), Some(100), Some(CompressionMethod::Zlib));
+
+        // Data larger than 100 bytes threshold
+        let large_string = "Hello World! ".repeat(50);
+        cache
+            .set(
+                "zlib_data".into(),
+                large_string.clone(),
+                Some(SetItemOptions {
+                    ttl: None,
+                    compress: Some(true),
+                    compression_method: Some(CompressionMethod::Zlib),
+                }),
+            )
+            .unwrap();
+
+        let retrieved = cache.get("zlib_data").unwrap().unwrap();
+        assert_eq!(retrieved, serde_json::Value::String(large_string));
+    }
+
+    #[cfg(feature = "zstd")]
+    #[test]
+    fn test_zstd_compression() {
+        let dir = tempdir().unwrap();
+        let mut cache = create_test_cache(&dir);
+        cache.init_with_config(true, Some(3), Some(100), Some(CompressionMethod::Zstd));
+
+        let large_string = "Zstandard Test Data Content! Fast and efficient! ".repeat(50);
+        cache
+            .set(
+                "zstd_data".into(),
+                large_string.clone(),
+                Some(SetItemOptions {
+                    ttl: None,
+                    compress: Some(true),
+                    compression_method: Some(CompressionMethod::Zstd),
+                }),
+            )
+            .unwrap();
+
+        let retrieved = cache.get("zstd_data").unwrap().unwrap();
+        assert_eq!(retrieved, serde_json::Value::String(large_string));
+    }
+
+    #[cfg(not(feature = "zstd"))]
+    #[test]
+    fn test_zstd_disabled_error() {
+        let dir = tempdir().unwrap();
+        let mut cache = create_test_cache(&dir);
+        cache.init_with_config(true, Some(3), Some(100), Some(CompressionMethod::Zstd));
+
+        let large_string = "Zstd Disabled Content! ".repeat(50);
+        let result = cache.set(
+            "zstd_data".into(),
+            large_string,
+            Some(SetItemOptions {
+                ttl: None,
+                compress: Some(true),
+                compression_method: Some(CompressionMethod::Zstd),
+            }),
+        );
+        assert!(result.is_err());
+    }
+
+    #[cfg(feature = "lzma2-native")]
+    #[test]
+    fn test_lzma2_compression() {
+        let dir = tempdir().unwrap();
+        let mut cache = create_test_cache(&dir);
+        cache.init_with_config(true, Some(6), Some(100), Some(CompressionMethod::Lzma2));
+
+        let large_string = "LZMA2 Test Data Content! ".repeat(50);
+        cache
+            .set(
+                "lzma2_data".into(),
+                large_string.clone(),
+                Some(SetItemOptions {
+                    ttl: None,
+                    compress: Some(true),
+                    compression_method: Some(CompressionMethod::Lzma2),
+                }),
+            )
+            .unwrap();
+
+        let retrieved = cache.get("lzma2_data").unwrap().unwrap();
+        assert_eq!(retrieved, serde_json::Value::String(large_string));
+    }
+
+    #[cfg(not(feature = "lzma2-native"))]
+    #[test]
+    fn test_lzma2_disabled_error() {
+        let dir = tempdir().unwrap();
+        let mut cache = create_test_cache(&dir);
+        cache.init_with_config(true, Some(6), Some(100), Some(CompressionMethod::Lzma2));
+
+        let large_string = "LZMA2 Disabled Content! ".repeat(50);
+        let result = cache.set(
+            "lzma2_data".into(),
+            large_string,
+            Some(SetItemOptions {
+                ttl: None,
+                compress: Some(true),
+                compression_method: Some(CompressionMethod::Lzma2),
+            }),
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_compression_threshold_uncompressed() {
+        let dir = tempdir().unwrap();
+        let mut cache = create_test_cache(&dir);
+        // Set threshold to 10000 bytes so smaller data stays uncompressed
+        cache.init_with_config(true, Some(6), Some(10000), Some(CompressionMethod::Zlib));
+
+        let small_string = "short text".to_string();
+        cache
+            .set(
+                "small_data".into(),
+                small_string.clone(),
+                Some(SetItemOptions {
+                    ttl: None,
+                    compress: Some(true),
+                    compression_method: Some(CompressionMethod::Zlib),
+                }),
+            )
+            .unwrap();
+
+        let retrieved = cache.get("small_data").unwrap().unwrap();
+        assert_eq!(retrieved, serde_json::Value::String(small_string));
     }
 }

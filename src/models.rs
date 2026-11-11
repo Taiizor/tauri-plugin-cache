@@ -12,6 +12,8 @@ pub enum CompressionMethod {
     Zlib,
     /// LZMA2 compression (better compression ratio, slower)
     Lzma2,
+    /// Zstandard compression (fast compression and decompression with good ratio)
+    Zstd,
 }
 
 /// Options for setting an item in the cache
@@ -182,5 +184,100 @@ impl Default for CacheConfig {
             compression_threshold: Some(1024), // Default 1KB threshold
             compression_method: Some(CompressionMethod::Zlib), // Default to Zlib
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compression_method_serde() {
+        assert_eq!(
+            serde_json::to_string(&CompressionMethod::Zlib).unwrap(),
+            "\"zlib\""
+        );
+        assert_eq!(
+            serde_json::to_string(&CompressionMethod::Lzma2).unwrap(),
+            "\"lzma2\""
+        );
+        assert_eq!(
+            serde_json::to_string(&CompressionMethod::Zstd).unwrap(),
+            "\"zstd\""
+        );
+        assert_eq!(
+            serde_json::from_str::<CompressionMethod>("\"zlib\"").unwrap(),
+            CompressionMethod::Zlib
+        );
+        assert_eq!(
+            serde_json::from_str::<CompressionMethod>("\"lzma2\"").unwrap(),
+            CompressionMethod::Lzma2
+        );
+        assert_eq!(
+            serde_json::from_str::<CompressionMethod>("\"zstd\"").unwrap(),
+            CompressionMethod::Zstd
+        );
+    }
+
+    #[test]
+    fn test_cache_config_default() {
+        let config = CacheConfig::default();
+        assert_eq!(config.cleanup_interval, Some(60));
+        assert_eq!(config.default_compression, Some(true));
+        assert_eq!(config.compression_level, Some(6));
+        assert_eq!(config.compression_threshold, Some(1024));
+        assert_eq!(config.compression_method, Some(CompressionMethod::Zlib));
+        assert!(config.cache_dir.is_none());
+        assert!(config.cache_file_name.is_none());
+    }
+
+    #[test]
+    fn test_compression_config_default() {
+        let config = CompressionConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.level, 6);
+        assert_eq!(config.threshold, COMPRESSION_THRESHOLD);
+        assert_eq!(config.method, CompressionMethod::Zlib);
+    }
+
+    #[test]
+    fn test_requests_serde() {
+        let json = r#"{"key":"user","value":{"name":"Alice","age":30},"options":{"ttl":120,"compress":true,"compressionMethod":"zlib"}}"#;
+        let set_req: SetRequest<serde_json::Value> = serde_json::from_str(json).unwrap();
+        assert_eq!(set_req.key, "user");
+        assert_eq!(set_req.value["name"], "Alice");
+        assert_eq!(set_req.options.as_ref().unwrap().ttl, Some(120));
+        assert_eq!(set_req.options.as_ref().unwrap().compress, Some(true));
+        assert_eq!(
+            set_req.options.as_ref().unwrap().compression_method,
+            Some(CompressionMethod::Zlib)
+        );
+
+        let get_json = r#"{"key":"user"}"#;
+        let get_req: GetRequest = serde_json::from_str(get_json).unwrap();
+        assert_eq!(get_req.key, "user");
+
+        let remove_json = r#"{"key":"user"}"#;
+        let rem_req: RemoveRequest = serde_json::from_str(remove_json).unwrap();
+        assert_eq!(rem_req.key, "user");
+
+        let has_json = r#"{"key":"user"}"#;
+        let has_req: HasRequest = serde_json::from_str(has_json).unwrap();
+        assert_eq!(has_req.key, "user");
+    }
+
+    #[test]
+    fn test_cache_stats_serde() {
+        let stats = CacheStats {
+            total_size: 10,
+            active_size: 7,
+        };
+        let serialized = serde_json::to_string(&stats).unwrap();
+        assert!(serialized.contains("\"totalSize\":10"));
+        assert!(serialized.contains("\"activeSize\":7"));
+
+        let deserialized: CacheStats = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized.total_size, 10);
+        assert_eq!(deserialized.active_size, 7);
     }
 }

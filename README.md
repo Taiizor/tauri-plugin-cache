@@ -62,9 +62,26 @@ Or manually add to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-tauri = { version = "2.9.4" }
-tauri-plugin-cache = "0.1.6"
+tauri = { version = "2.11.6" }
+tauri-plugin-cache = "0.1.7"
 ```
+
+##### Cargo Features
+
+| Feature | Default | Description |
+| --- | --- | --- |
+| `desktop` | yes | Desktop platform support |
+| `mobile` | yes | Mobile platform support |
+| `lzma2-native` | yes | Adds the `CompressionMethod::Lzma2` codec. Links the liblzma C library through `xz2`/`lzma-sys`. |
+| `zstd` | yes | Adds the `CompressionMethod::Zstd` codec for ultra-fast, modern compression via `zstd`. |
+
+The Zlib codec uses `flate2` with its pure-Rust backend (`rust_backend`), while `lzma2-native` and `zstd` pull C code into the dependency tree. For a pure-Rust, C-toolchain-free build you can opt-out by disabling default features:
+
+```toml
+tauri-plugin-cache = { version = "0.1.7", default-features = false, features = ["desktop", "mobile"] }
+```
+
+In that configuration, attempting to compress with `CompressionMethod::Lzma2` or `CompressionMethod::Zstd` returns an error, and reading previously stored entries in those formats fails with a descriptive error message.
 
 #### JavaScript/TypeScript API
 
@@ -276,7 +293,7 @@ Sets an item in the cache with optional TTL and compression.
 - `options`: Optional settings
   - `ttl`: Time-to-live in seconds (item will be deleted after this time)
   - `compress`: Whether to compress the data before storing
-  - `compressionMethod`: Compression method to use (CompressionMethod.Zlib or CompressionMethod.Lzma2)
+  - `compressionMethod`: Compression method to use (CompressionMethod.Zlib, CompressionMethod.Lzma2, or CompressionMethod.Zstd)
 
 #### `get<T = any>(key: string): Promise<T | null>`
 
@@ -319,7 +336,8 @@ This plugin supports data compression to reduce the disk space used by cache ite
 The plugin supports multiple compression methods to optimize storage based on your specific needs:
 
 - **Zlib**: Default method, provides a good balance between compression ratio and speed
-- **LZMA2**: Better compression ratio (especially for base64 encoded data), but slower compression speed
+- **LZMA2**: Better compression ratio (especially for base64 encoded data), but slower compression speed (requires lzma2-native feature)
+- **Zstd**: Ultra-fast compression and decompression with high compression ratio (requires zstd feature)
 
 ### Benefits of Compression
 

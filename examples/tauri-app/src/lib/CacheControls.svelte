@@ -115,9 +115,14 @@
         <span class="radio-custom"></span>
         <span>LZMA2 (High Ratio)</span>
       </label>
+      <label class="radio-label">
+        <input type="radio" bind:group={compressionMethod} value={CompressionMethod.Zstd} id="zstd-radio" class="custom-radio" />
+        <span class="radio-custom"></span>
+        <span>Zstd (Ultra Fast)</span>
+      </label>
     </div>
   </div>
-  <div class="tooltip compression-tooltip">LZMA2 provides better compression but is slower. Zlib is faster but offers less compression.</div>
+  <div class="tooltip compression-tooltip">Zstd offers ultra-fast compression. LZMA2 provides highest compression ratio. Zlib is standard fast.</div>
   {/if}
   
   <div class="button-group">

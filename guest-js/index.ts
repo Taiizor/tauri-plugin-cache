@@ -11,7 +11,11 @@ export enum CompressionMethod {
   /**
    * LZMA2 compression (better compression ratio, slower)
    */
-  Lzma2 = 'lzma2'
+  Lzma2 = 'lzma2',
+  /**
+   * Zstandard compression (fast compression and decompression with good ratio)
+   */
+  Zstd = 'zstd'
 }
 
 /**
