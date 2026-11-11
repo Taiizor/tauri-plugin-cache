@@ -161,3 +161,52 @@ export async function clear(): Promise<void> {
 export async function stats(): Promise<CacheStats> {
   return await invoke<CacheStats>('plugin:cache|stats');
 }
+
+/**
+ * Detailed information and compression metrics about a cached item
+ */
+export interface ItemDetails {
+  /**
+   * The cache key
+   */
+  key: string;
+  /**
+   * Original uncompressed size of the serialized value in bytes
+   */
+  originalSize: number;
+  /**
+   * Stored size in bytes (compressed payload size if compressed, raw size if uncompressed)
+   */
+  compressedSize: number;
+  /**
+   * Whether the item is compressed
+   */
+  isCompressed: boolean;
+  /**
+   * The compression method used if compressed
+   */
+  compressionMethod?: CompressionMethod;
+  /**
+   * Percentage of space saved (0.0 to 100.0)
+   */
+  compressionRatio: number;
+}
+
+/**
+ * Gets detailed information and compression metrics about a cached item
+ * @param key The key to inspect
+ * @returns Details about the item or null if not found or expired
+ * @example
+ * ```typescript
+ * const info = await details('largeData');
+ * if (info) {
+ *   console.log(`Original: ${info.originalSize} bytes, Stored: ${info.compressedSize} bytes (Saved ${info.compressionRatio.toFixed(1)}%)`);
+ * }
+ * ```
+ */
+export async function details(key: string): Promise<ItemDetails | null> {
+  const result = await invoke<ItemDetails | null>('plugin:cache|details', {
+    key,
+  });
+  return result === undefined ? null : result;
+}

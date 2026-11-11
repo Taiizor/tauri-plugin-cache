@@ -1,6 +1,6 @@
 [default]
 description = "Default permissions for the cache plugin"
-permissions = ["allow-set", "allow-get", "allow-has", "allow-remove", "allow-clear", "allow-stats"]
+permissions = ["allow-set", "allow-get", "allow-has", "allow-remove", "allow-clear", "allow-stats", "allow-details"]
 
 # Permissions for setting cache items
 [allow-set]
@@ -30,4 +30,9 @@ context = []
 # Permissions for getting cache statistics
 [allow-stats]
 description = "Allows retrieving statistics about the cache"
+context = []
+
+# Permissions for getting detailed item and compression statistics
+[allow-details]
+description = "Allows retrieving detailed information and compression statistics about cache items"
 context = []

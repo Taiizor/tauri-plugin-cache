@@ -738,6 +738,91 @@ impl<R: Runtime> Cache<R> {
         self.cache_file_path.clone()
     }
 
+    /// Get detailed information and compression metrics about a cached item
+    pub fn details(&self, key: &str) -> crate::Result<Option<ItemDetails>> {
+        let _guard = self.file_mutex.lock().unwrap();
+
+        let data = Self::read_from_file(&self.cache_file_path)
+            .map_err(|e| Error::Cache(format!("Failed to read cache file: {}", e)))?;
+
+        if let Some(entry) = data.get(key) {
+            // Check if expired
+            if let Some(expires_at) = entry.expires_at {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
+                if expires_at < now {
+                    return Ok(None);
+                }
+            }
+
+            let is_compressed = entry.is_compressed.unwrap_or(false);
+
+            if is_compressed {
+                if let serde_json::Value::String(ref encoded_str) = entry.value {
+                    let processed_data = STANDARD
+                        .decode(encoded_str)
+                        .map_err(|e| Error::Cache(format!("Failed to decode base64: {}", e)))?;
+
+                    let method = match processed_data.get(1) {
+                        Some(1) => Some(CompressionMethod::Zlib),
+                        Some(2) => Some(CompressionMethod::Lzma2),
+                        Some(3) => Some(CompressionMethod::Zstd),
+                        _ => None,
+                    };
+
+                    // Payload size excluding the 2 marker bytes
+                    let compressed_size = if processed_data.len() >= 2 {
+                        processed_data.len() - 2
+                    } else {
+                        processed_data.len()
+                    };
+
+                    // Decompress to determine the exact uncompressed serialized JSON size
+                    let decompressed_val = self.decompress_value(&processed_data)?;
+                    let original_size = serde_json::to_vec(&decompressed_val)
+                        .map_err(|e| Error::Cache(format!("Failed to serialize decompressed value: {}", e)))?
+                        .len();
+
+                    let compression_ratio = if original_size > 0 {
+                        ((1.0 - (compressed_size as f64 / original_size as f64)) * 100.0).max(0.0)
+                    } else {
+                        0.0
+                    };
+
+                    Ok(Some(ItemDetails {
+                        key: key.to_string(),
+                        original_size,
+                        compressed_size,
+                        is_compressed: true,
+                        compression_method: method,
+                        compression_ratio,
+                    }))
+                } else {
+                    Err(Error::Cache(
+                        "Compressed value is not in expected format".to_string(),
+                    ))
+                }
+            } else {
+                let original_size = serde_json::to_vec(&entry.value)
+                    .map_err(|e| Error::Cache(format!("Failed to serialize value: {}", e)))?
+                    .len();
+
+                Ok(Some(ItemDetails {
+                    key: key.to_string(),
+                    original_size,
+                    compressed_size: original_size,
+                    is_compressed: false,
+                    compression_method: None,
+                    compression_ratio: 0.0,
+                }))
+            }
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Configure the cache with compression settings
     pub fn init_with_config(
         &mut self,
@@ -1018,5 +1103,53 @@ mod tests {
 
         let retrieved = cache.get("small_data").unwrap().unwrap();
         assert_eq!(retrieved, serde_json::Value::String(small_string));
+    }
+
+    #[test]
+    fn test_item_details() {
+        let dir = tempdir().unwrap();
+        let mut cache = create_test_cache(&dir);
+        cache.init_with_config(true, Some(6), Some(10), Some(CompressionMethod::Zlib));
+
+        // Test uncompressed item details
+        let small = "hello".to_string();
+        cache
+            .set(
+                "uncompressed".into(),
+                small.clone(),
+                Some(SetItemOptions {
+                    ttl: None,
+                    compress: Some(false),
+                    compression_method: None,
+                }),
+            )
+            .unwrap();
+
+        let details = cache.details("uncompressed").unwrap().unwrap();
+        assert_eq!(details.key, "uncompressed");
+        assert!(!details.is_compressed);
+        assert_eq!(details.original_size, details.compressed_size);
+        assert_eq!(details.compression_ratio, 0.0);
+
+        // Test compressed item details
+        let large = "Repeat repetition test string for compression! ".repeat(50);
+        cache
+            .set(
+                "compressed".into(),
+                large.clone(),
+                Some(SetItemOptions {
+                    ttl: None,
+                    compress: Some(true),
+                    compression_method: Some(CompressionMethod::Zlib),
+                }),
+            )
+            .unwrap();
+
+        let details = cache.details("compressed").unwrap().unwrap();
+        assert_eq!(details.key, "compressed");
+        assert!(details.is_compressed);
+        assert_eq!(details.compression_method, Some(CompressionMethod::Zlib));
+        assert!(details.compressed_size < details.original_size);
+        assert!(details.compression_ratio > 0.0);
     }
 }

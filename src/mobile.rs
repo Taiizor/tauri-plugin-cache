@@ -175,4 +175,14 @@ impl<R: Runtime> Cache<R> {
             .run_mobile_plugin::<CacheStats>("stats", ())
             .map_err(|e| crate::Error::PluginInvoke(e))
     }
+
+    /// Get detailed information and compression metrics about a cached item
+    pub fn details(&self, key: &str) -> crate::Result<Option<ItemDetails>> {
+        let request = GetRequest {
+            key: key.to_string(),
+        };
+        self.0
+            .run_mobile_plugin::<Option<ItemDetails>>("details", request)
+            .map_err(|e| crate::Error::PluginInvoke(e))
+    }
 }

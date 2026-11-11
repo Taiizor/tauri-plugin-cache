@@ -51,7 +51,8 @@ pub fn init_with_config<R: Runtime>(config: CacheConfig) -> TauriPlugin<R> {
             commands::has,
             commands::remove,
             commands::clear,
-            commands::stats
+            commands::stats,
+            commands::details
         ])
         .setup(move |app, api| {
             // Provide the config manually to the desktop implementation

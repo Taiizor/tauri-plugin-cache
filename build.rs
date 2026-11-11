@@ -1,4 +1,4 @@
-const COMMANDS: &[&str] = &["set", "get", "has", "remove", "clear", "stats"];
+const COMMANDS: &[&str] = &["set", "get", "has", "remove", "clear", "stats", "details"];
 
 fn main() {
     #[cfg(target_os = "windows")]

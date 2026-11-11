@@ -177,6 +177,7 @@ This enables all cache operations including setting, getting, and removing cache
 - `cache:allow-remove`
 - `cache:allow-clear`
 - `cache:allow-stats`
+- `cache:allow-details`
 
 ### Permission Table
 
@@ -194,13 +195,15 @@ This enables all cache operations including setting, getting, and removing cache
 | cache:deny-clear | Denies clearing all data from the cache |
 | cache:allow-stats | Allows retrieving statistics about the cache |
 | cache:deny-stats | Denies retrieving statistics about the cache |
+| cache:allow-details | Allows retrieving detailed metadata and compression metrics about cache items |
+| cache:deny-details | Denies retrieving detailed metadata and compression metrics about cache items |
 
 ## Usage
 
 ### JavaScript/TypeScript Example
 
 ```typescript
-import { set, get, has, remove, clear, stats } from 'tauri-plugin-cache-api';
+import { set, get, has, remove, clear, stats, details } from 'tauri-plugin-cache-api';
 
 // Store a value with TTL
 await set('user', { name: 'John', age: 30 }, { ttl: 60 }); // Expires in 60 seconds
@@ -326,6 +329,19 @@ Gets cache statistics.
 - Returns: An object with statistics about the cache
   - `totalSize`: Total number of items in the cache
   - `activeSize`: Number of active (non-expired) items
+
+#### `details(key: string): Promise<ItemDetails | null>`
+
+Gets detailed metadata and compression metrics about a cached item.
+
+- `key`: The key to inspect
+- Returns: An `ItemDetails` object or null if not found or expired
+  - `key`: The item key
+  - `originalSize`: Original uncompressed serialized JSON size in bytes
+  - `compressedSize`: Size of the stored payload in bytes
+  - `isCompressed`: Boolean indicating if compression was applied
+  - `compressionMethod`: CompressionMethod used (`Zlib`, `Lzma2`, or `Zstd`)
+  - `compressionRatio`: Percentage of space saved (0.0 to 100.0)
 
 ## Compression
 

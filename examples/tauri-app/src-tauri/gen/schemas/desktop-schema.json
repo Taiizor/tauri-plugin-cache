@@ -177,16 +177,22 @@
       "description": "Permission identifier",
       "oneOf": [
         {
-          "description": "Default permissions for the cache plugin\n#### This default permission set includes:\n\n- `allow-set`\n- `allow-get`\n- `allow-has`\n- `allow-remove`\n- `allow-clear`\n- `allow-stats`",
+          "description": "Default permissions for the cache plugin\n#### This default permission set includes:\n\n- `allow-set`\n- `allow-get`\n- `allow-has`\n- `allow-remove`\n- `allow-clear`\n- `allow-stats`\n- `allow-details`",
           "type": "string",
           "const": "cache:default",
-          "markdownDescription": "Default permissions for the cache plugin\n#### This default permission set includes:\n\n- `allow-set`\n- `allow-get`\n- `allow-has`\n- `allow-remove`\n- `allow-clear`\n- `allow-stats`"
+          "markdownDescription": "Default permissions for the cache plugin\n#### This default permission set includes:\n\n- `allow-set`\n- `allow-get`\n- `allow-has`\n- `allow-remove`\n- `allow-clear`\n- `allow-stats`\n- `allow-details`"
         },
         {
           "description": "Enables the clear command without any pre-configured scope.",
           "type": "string",
           "const": "cache:allow-clear",
           "markdownDescription": "Enables the clear command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the details command without any pre-configured scope.",
+          "type": "string",
+          "const": "cache:allow-details",
+          "markdownDescription": "Enables the details command without any pre-configured scope."
         },
         {
           "description": "Enables the get command without any pre-configured scope.",
@@ -223,6 +229,12 @@
           "type": "string",
           "const": "cache:deny-clear",
           "markdownDescription": "Denies the clear command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the details command without any pre-configured scope.",
+          "type": "string",
+          "const": "cache:deny-details",
+          "markdownDescription": "Denies the details command without any pre-configured scope."
         },
         {
           "description": "Denies the get command without any pre-configured scope.",

@@ -1,5 +1,5 @@
 <script>
-  import { set, get, stats, CompressionMethod } from 'tauri-plugin-cache-api';
+  import { set, get, stats, details, CompressionMethod } from 'tauri-plugin-cache-api';
   
   let testResults = "";
   let isRunning = false;
@@ -63,6 +63,29 @@
       // Get cache statistics
       const cacheStats = await stats();
       testResults += `Total items in cache: ${cacheStats.totalSize}\n\n`;
+
+      // Get item details for stored sizes
+      const uncompDetails = await details(uncompressedKey);
+      const zlibDetails = await details(zlibKey);
+      const lzma2Details = await details(lzma2Key);
+      const zstdDetails = await details(zstdKey);
+
+      testResults += `--- Storage Size & Compression Ratio ---\n`;
+      const baseSize = uncompDetails ? uncompDetails.originalSize : dataSize;
+      testResults += `• Original (Uncompressed): ${formatSize(baseSize)} (100%)\n`;
+      if (zlibDetails) {
+        const ratio = (baseSize / zlibDetails.compressedSize).toFixed(1);
+        testResults += `• Zlib Compressed:         ${formatSize(zlibDetails.compressedSize)} (Saved: ${zlibDetails.compressionRatio.toFixed(1)}%, ${ratio}x smaller)\n`;
+      }
+      if (lzma2Details) {
+        const ratio = (baseSize / lzma2Details.compressedSize).toFixed(1);
+        testResults += `• LZMA2 Compressed:        ${formatSize(lzma2Details.compressedSize)} (Saved: ${lzma2Details.compressionRatio.toFixed(1)}%, ${ratio}x smaller)\n`;
+      }
+      if (zstdDetails) {
+        const ratio = (baseSize / zstdDetails.compressedSize).toFixed(1);
+        testResults += `• Zstd Compressed:         ${formatSize(zstdDetails.compressedSize)} (Saved: ${zstdDetails.compressionRatio.toFixed(1)}%, ${ratio}x smaller)\n`;
+      }
+      testResults += `\n`;
       
       // Read performance tests
       testResults += `--- Reading Performance ---\n`;
@@ -91,13 +114,13 @@
       const endReadZstd = performance.now();
       testResults += `Zstd compressed read time: ${(endReadZstd - startReadZstd).toFixed(2)} ms\n\n`;
       
-      testResults += `--- Compression Efficiency Comparison ---\n`;
+      testResults += `--- Method Summary & Recommendations ---\n`;
       testResults += `Data Type: JSON with repetitive content\n`;
-      testResults += `Zlib: Fast compression/decompression, good for general use\n`;
-      testResults += `LZMA2: Best compression ratio, slower, best for text and base64 data\n`;
-      testResults += `Zstd: Ultra-fast compression and decompression with excellent ratio\n`;
+      testResults += `• Zstd:  RECOMMENDED for modern applications. Fastest read/write times with high compression ratio.\n`;
+      testResults += `• LZMA2: Maximum space savings, but compression is slower. Ideal for archiving or cold data.\n`;
+      testResults += `• Zlib:  Standard balanced method, pure-Rust backend without any C dependency requirements.\n`;
       
-      testResults += "\nTest completed! For optimal performance, choose Zlib for frequently changing data and LZMA2 for maximum space savings of rarely changed data.";
+      testResults += "\nTest completed! For daily workloads, Zstd delivers the best speed-to-size tradeoff.";
       
     } catch (error) {
       testResults += `Error: ${error.message}`;
@@ -177,7 +200,16 @@
       const startReadCompressed = performance.now();
       await get(compressedKey);
       const endReadCompressed = performance.now();
-      testResults += `${method.toUpperCase()} read time: ${(endReadCompressed - startReadCompressed).toFixed(2)} ms\n`;
+      testResults += `${method.toUpperCase()} read time: ${(endReadCompressed - startReadCompressed).toFixed(2)} ms\n\n`;
+
+      // Storage details
+      const itemInfo = await details(compressedKey);
+      if (itemInfo) {
+        testResults += `--- Size Comparison ---\n`;
+        testResults += `Original size:   ${formatSize(itemInfo.originalSize)}\n`;
+        testResults += `Compressed size: ${formatSize(itemInfo.compressedSize)}\n`;
+        testResults += `Space saved:     ${itemInfo.compressionRatio.toFixed(1)}% (${(itemInfo.originalSize / itemInfo.compressedSize).toFixed(1)}x ratio)\n`;
+      }
       
       testResults += `\nTest completed for ${method.toUpperCase()} compression.`;
       

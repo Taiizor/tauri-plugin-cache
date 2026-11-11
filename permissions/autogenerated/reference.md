@@ -10,6 +10,7 @@ Default permissions for the cache plugin
 - `allow-remove`
 - `allow-clear`
 - `allow-stats`
+- `allow-details`
 
 ## Permission Table
 
@@ -42,6 +43,32 @@ Enables the clear command without any pre-configured scope.
 <td>
 
 Denies the clear command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cache:allow-details`
+
+</td>
+<td>
+
+Enables the details command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cache:deny-details`
+
+</td>
+<td>
+
+Denies the details command without any pre-configured scope.
 
 </td>
 </tr>

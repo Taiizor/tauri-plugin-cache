@@ -116,6 +116,24 @@ pub struct CacheStats {
     pub active_size: usize,
 }
 
+/// Detailed information and compression metrics about a cached item
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ItemDetails {
+    /// The cache key
+    pub key: String,
+    /// Original uncompressed size of the serialized value in bytes
+    pub original_size: usize,
+    /// Size of the stored payload in bytes (compressed payload if compressed, raw if uncompressed)
+    pub compressed_size: usize,
+    /// Whether the item is compressed
+    pub is_compressed: bool,
+    /// The compression method used if compressed
+    pub compression_method: Option<CompressionMethod>,
+    /// Percentage of space saved (0.0 - 100.0)
+    pub compression_ratio: f64,
+}
+
 /// Response containing a boolean value
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -279,5 +297,27 @@ mod tests {
         let deserialized: CacheStats = serde_json::from_str(&serialized).unwrap();
         assert_eq!(deserialized.total_size, 10);
         assert_eq!(deserialized.active_size, 7);
+    }
+
+    #[test]
+    fn test_item_details_serde() {
+        let details = ItemDetails {
+            key: "test-item".to_string(),
+            original_size: 1024,
+            compressed_size: 256,
+            is_compressed: true,
+            compression_method: Some(CompressionMethod::Zstd),
+            compression_ratio: 75.0,
+        };
+        let serialized = serde_json::to_string(&details).unwrap();
+        assert!(serialized.contains("\"key\":\"test-item\""));
+        assert!(serialized.contains("\"originalSize\":1024"));
+        assert!(serialized.contains("\"compressedSize\":256"));
+        assert!(serialized.contains("\"isCompressed\":true"));
+        assert!(serialized.contains("\"compressionMethod\":\"zstd\""));
+        assert!(serialized.contains("\"compressionRatio\":75.0"));
+
+        let deserialized: ItemDetails = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized, details);
     }
 }

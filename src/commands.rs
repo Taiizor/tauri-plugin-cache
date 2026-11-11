@@ -60,3 +60,20 @@ pub(crate) async fn stats<R: Runtime>(app: AppHandle<R>) -> Result<CacheStats> {
         app.cache().stats()
     }
 }
+
+/// Get detailed information and compression metrics about a cached item
+#[command]
+pub(crate) async fn details<R: Runtime>(
+    app: AppHandle<R>,
+    key: String,
+) -> Result<Option<ItemDetails>> {
+    #[cfg(desktop)]
+    {
+        app.cache().details(&key)
+    }
+
+    #[cfg(mobile)]
+    {
+        app.cache().details(&key)
+    }
+}
