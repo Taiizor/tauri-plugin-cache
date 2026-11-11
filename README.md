@@ -27,6 +27,9 @@ An advanced, versatile, and performance-focused disk caching solution for Tauri 
 The easiest way to install this plugin is using the Tauri CLI, which automatically adds both Rust and JavaScript dependencies to your project:
 
 ```bash
+# Using bun (recommended)
+bun run tauri add cache
+
 # Using npm
 npm run tauri add cache
 
@@ -35,14 +38,11 @@ pnpm tauri add cache
 
 # Using yarn
 yarn tauri add cache
-
-# Using bun
-bun tauri add cache
 ```
 
 This will:
 - Add the `tauri-plugin-cache` crate to your `Cargo.toml`
-- Install the `tauri-plugin-cache-api` npm package
+- Install the `tauri-plugin-cache-api` package
 - Set up the necessary configurations
 
 ### Manual Installation
@@ -88,11 +88,15 @@ In that configuration, attempting to compress with `CompressionMethod::Lzma2` or
 Add the plugin API package to your project:
 
 ```bash
-pnpm install tauri-plugin-cache-api
-# or
-bun install tauri-plugin-cache-api
+# Using bun (recommended)
+bun add tauri-plugin-cache-api
+
 # or
 npm install tauri-plugin-cache-api
+
+# or
+pnpm add tauri-plugin-cache-api
+
 # or
 yarn add tauri-plugin-cache-api
 ```
