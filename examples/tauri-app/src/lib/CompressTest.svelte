@@ -49,6 +49,16 @@
       });
       const endLzma2 = performance.now();
       testResults += `LZMA2 compression save time: ${(endLzma2 - startLzma2).toFixed(2)} ms\n\n`;
+
+      // Test with Zstd compression
+      const zstdKey = "test-zstd";
+      const startZstd = performance.now();
+      await set(zstdKey, largeData, { 
+        compress: true,
+        compressionMethod: CompressionMethod.Zstd 
+      });
+      const endZstd = performance.now();
+      testResults += `Zstd compression save time: ${(endZstd - startZstd).toFixed(2)} ms\n\n`;
       
       // Get cache statistics
       const cacheStats = await stats();
@@ -74,11 +84,18 @@
       await get(lzma2Key);
       const endReadLzma2 = performance.now();
       testResults += `LZMA2 compressed read time: ${(endReadLzma2 - startReadLzma2).toFixed(2)} ms\n\n`;
+
+      // Read Zstd compressed
+      const startReadZstd = performance.now();
+      await get(zstdKey);
+      const endReadZstd = performance.now();
+      testResults += `Zstd compressed read time: ${(endReadZstd - startReadZstd).toFixed(2)} ms\n\n`;
       
       testResults += `--- Compression Efficiency Comparison ---\n`;
       testResults += `Data Type: JSON with repetitive content\n`;
       testResults += `Zlib: Fast compression/decompression, good for general use\n`;
-      testResults += `LZMA2: Better compression ratio, slower, best for text and base64 data\n`;
+      testResults += `LZMA2: Best compression ratio, slower, best for text and base64 data\n`;
+      testResults += `Zstd: Ultra-fast compression and decompression with excellent ratio\n`;
       
       testResults += "\nTest completed! For optimal performance, choose Zlib for frequently changing data and LZMA2 for maximum space savings of rarely changed data.";
       
@@ -139,9 +156,12 @@
       testResults += `Test data size: ${formatSize(dataSize)}\n\n`;
       
       // Get correct compression method
-      const compressionMethod = method === 'zlib' 
-        ? CompressionMethod.Zlib 
-        : CompressionMethod.Lzma2;
+      let compressionMethod = CompressionMethod.Zlib;
+      if (method === 'lzma2') {
+        compressionMethod = CompressionMethod.Lzma2;
+      } else if (method === 'zstd') {
+        compressionMethod = CompressionMethod.Zstd;
+      }
       
       // Save with specified compression
       const compressedKey = `test-${method}`;
@@ -188,6 +208,11 @@
         <span class="method-name">LZMA2</span>
         <span class="method-desc">Test High Ratio Compression</span>
       </button>
+      
+      <button on:click={() => testSpecificMethod('zstd')} disabled={isRunning} class="method-btn zstd-btn">
+        <span class="method-name">Zstd</span>
+        <span class="method-desc">Test Ultra-Fast Compression</span>
+      </button>
     </div>
   </div>
   
@@ -214,6 +239,8 @@
     --zlib-hover: #758ffe;
     --lzma-color: #6200ee;
     --lzma-hover: #7722ff;
+    --zstd-color: #00b894;
+    --zstd-hover: #00cec9;
   }
 
   /* Dark mode support */
@@ -323,6 +350,16 @@
   
   .lzma-btn:hover:not(:disabled) {
     background-color: var(--lzma-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .zstd-btn {
+    background-color: var(--zstd-color);
+  }
+  
+  .zstd-btn:hover:not(:disabled) {
+    background-color: var(--zstd-hover);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
