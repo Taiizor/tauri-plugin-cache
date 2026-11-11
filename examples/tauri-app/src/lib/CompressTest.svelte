@@ -48,7 +48,7 @@
         compressionMethod: CompressionMethod.Lzma2 
       });
       const endLzma2 = performance.now();
-      testResults += `LZMA2 compression save time: ${(endLzma2 - startLzma2).toFixed(2)} ms\n\n`;
+      testResults += `LZMA2 compression save time: ${(endLzma2 - startLzma2).toFixed(2)} ms\n`;
 
       // Test with Zstd compression
       const zstdKey = "test-zstd";
@@ -106,7 +106,7 @@
       const startReadLzma2 = performance.now();
       await get(lzma2Key);
       const endReadLzma2 = performance.now();
-      testResults += `LZMA2 compressed read time: ${(endReadLzma2 - startReadLzma2).toFixed(2)} ms\n\n`;
+      testResults += `LZMA2 compressed read time: ${(endReadLzma2 - startReadLzma2).toFixed(2)} ms\n`;
 
       // Read Zstd compressed
       const startReadZstd = performance.now();
