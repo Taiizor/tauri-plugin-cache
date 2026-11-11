@@ -96,7 +96,7 @@ jobs:
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             npm run tauri -- build --target ${{ matrix.target }} --debug
           else
-            bun tauri build --target ${{ matrix.target }} --debug
+            bun run tauri build --target ${{ matrix.target }} --debug
           fi
 
   # Android build
@@ -149,14 +149,14 @@ jobs:
 
       - name: Initialize Android project
         working-directory: examples/tauri-app
-        run: bun tauri android init
+        run: bun run tauri android init
 
       - name: Build Android app
         working-directory: examples/tauri-app
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           RUSTFLAGS: "-D warnings"
-        run: bun tauri android build --target aarch64 --debug
+        run: bun run tauri android build --target aarch64 --debug
 
   # iOS build
   ios:
@@ -192,10 +192,10 @@ jobs:
 
       - name: Initialize iOS project
         working-directory: examples/tauri-app
-        run: bun tauri ios init
+        run: bun run tauri ios init
 
       - name: Build iOS app (Simulator)
         working-directory: examples/tauri-app
         env:
           RUSTFLAGS: "-D warnings"
-        run: bun tauri ios build --target aarch64-sim --debug
+        run: bun run tauri ios build --target aarch64-sim --debug

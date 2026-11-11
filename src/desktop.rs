@@ -782,7 +782,9 @@ impl<R: Runtime> Cache<R> {
                     // Decompress to determine the exact uncompressed serialized JSON size
                     let decompressed_val = self.decompress_value(&processed_data)?;
                     let original_size = serde_json::to_vec(&decompressed_val)
-                        .map_err(|e| Error::Cache(format!("Failed to serialize decompressed value: {}", e)))?
+                        .map_err(|e| {
+                            Error::Cache(format!("Failed to serialize decompressed value: {}", e))
+                        })?
                         .len();
 
                     let compression_ratio = if original_size > 0 {

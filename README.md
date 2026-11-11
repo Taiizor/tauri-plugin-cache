@@ -62,7 +62,7 @@ Or manually add to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-tauri = { version = "2.11.6" }
+tauri = { version = "2.12" }
 tauri-plugin-cache = "0.1.7"
 ```
 
