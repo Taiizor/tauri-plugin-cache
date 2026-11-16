@@ -40,7 +40,7 @@ base64 = "0.23.1"
 thiserror = "2"
 flate2 = "1.1"
 xz2 = { version = "0.1.7", optional = true }
-zstd = { version = "0.13", optional = true }
+zstd = { version = "0.14", optional = true }
 
 [build-dependencies]
 tauri-plugin = { version = "2.7", features = ["build"] }
